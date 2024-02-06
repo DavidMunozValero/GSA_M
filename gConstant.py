@@ -14,11 +14,24 @@ Code compatible:
  -- Python: 2.* or 3.*
 """
 
-import numpy
+import numpy as np
 
-def gConstant(l,iters):
+from typing import Tuple
+
+
+def gConstant(l, iters):
     alfa = 20
     G0 = 100
-    Gimd = numpy.exp(-alfa*float(l)/iters)
+    Gimd = np.exp(-alfa*float(l)/iters)
     G = G0*Gimd
     return G
+
+
+def sinChaoticTerm(curr_iter: int, value: float) -> Tuple[float, float]:
+    x = [0.7]
+    G_terms = []
+    for i in range(0, curr_iter+1):
+        x.append(2.3 * x[i]**2 * np.sin(np.pi*x[i]))
+        G_terms.append(x[i] * value)
+
+    return G_terms[curr_iter], x[curr_iter]
