@@ -19,6 +19,7 @@ class solution:
         self.best = 0
         self.bestIndividual=[]
         self.convergence = []
+        self.solution_history = []
         self.optimizer=""
         self.objfname=""
         self.startTime=0
