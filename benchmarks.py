@@ -28,7 +28,7 @@ def F1(x):
 
 def getFunctionDetails(a):
   # [name, lb, ub, dim]
-  param = {  0: ["F1",-100,100,30],
+  param = {  0: ["F1",-100,100,10],
             }
   return param.get(a, "nothing")
 
