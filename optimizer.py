@@ -52,8 +52,8 @@ objectivefunc=[F1]
 Runs=1
 
 # Select general parameters for all optimizers (population size, number of iterations)
-PopSize = 50
-iterations= 1000
+PopSize = 30
+iterations= 100
 
 #Export results ?
 Export=True
@@ -61,17 +61,20 @@ Export=True
 
 #ExportToFile="YourResultsAreHere.csv"
 #Automaticly generated name by date and time
-ExportToFile="experiment"+time.strftime("%Y-%m-%d-%H-%M-%S")+".csv" 
+save_path = "data/output/"
+ExportToFile=save_path+"experiment"+time.strftime("%Y-%m-%d-%H-%M-%S")+".csv"
 
 # Check if it works at least once
 atLeastOneIteration=False
 
 
-# CSV Header for for the cinvergence 
+# CSV Header for the convergence
 CnvgHeader=[]
+# SolHeader=[]
 
 for l in range(0,iterations):
-	CnvgHeader.append("Iter"+str(l+1))
+    CnvgHeader.append("Iter"+str(l+1))
+    # SolHeader.append("Sol_Iter"+str(l+1))
 
 
 for i in range (0, len(Algorithm)):
@@ -86,13 +89,12 @@ for i in range (0, len(Algorithm)):
                         writer = csv.writer(out,delimiter=',')
                         if (atLeastOneIteration==False): # just one time to write the header of the CSV file
                             header= numpy.concatenate([["Optimizer","objfname","startTime","EndTime","ExecutionTime"],CnvgHeader])
+                            print(header)
                             writer.writerow(header)
-                        a=numpy.concatenate([[x.Algorithm,x.objectivefunc,x.startTime,x.endTime,x.executionTime],x.convergence])
+                        a=numpy.concatenate([[x.Algorithm,x.objectivefunc,x.startTime,x.endTime,x.executionTime], x.convergence])
                         writer.writerow(a)
                     out.close()
                 atLeastOneIteration=True # at least one experiment
                 
 if (atLeastOneIteration==False): # Faild to run at least one experiment
     print("No Optomizer or Cost function is selected. Check lists of available optimizers and cost functions") 
-        
-        
