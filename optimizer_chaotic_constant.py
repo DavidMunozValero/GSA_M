@@ -18,6 +18,7 @@ import GSA as gsa
 import benchmarks
 import csv
 import numpy
+import os
 import time
 
 
@@ -58,7 +59,11 @@ Export = True
 
 # ExportToFile="YourResultsAreHere.csv"
 # Automaticly generated name by date and time
+
 save_path = "data/output/"
+if not os.path.exists(save_path):
+    os.makedirs(save_path)
+
 ExportToFile = save_path + "experiment" + time.strftime("%Y-%m-%d-%H-%M-%S_") + str(chaotic_constant) + ".csv"
 
 # Check if it works at least once
