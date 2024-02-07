@@ -14,32 +14,32 @@ The code template used is similar given at link: https://github.com/7ossam81/Evo
 Code compatible:
  -- Python: 2.* or 3.*
 """
-import GSA as gsa
 import benchmarks
 import csv
 import numpy
 import os
 import time
 
+from GSA import GSA
 
-def selector(algo, func_details, popSize, Iter, chaotic_constant: bool = False):
+
+def selector(func_details, popSize, Iter, chaotic_constant: bool = False):
     function_name = func_details[0]
     lb = func_details[1]
     ub = func_details[2]
     dim = func_details[3]
-
-    if (algo == 0):
-        x = gsa.GSA(getattr(benchmarks, function_name), lb, ub, dim, popSize, Iter, chaotic_constant=chaotic_constant)
-    return x
+    print(lb, ub, dim, popSize, Iter)
+    print("Function: ", getattr(benchmarks, function_name))
+    return GSA(getattr(benchmarks, function_name), lb, ub, dim, popSize, Iter, chaotic_constant=chaotic_constant)
 
 
 # Select optimizers
-GSA = True  # Code by Himanshu Mittal
+gsa = True  # Code by Himanshu Mittal
 
 # Select benchmark function
 F1 = True
 
-Algorithm = [GSA]
+Algorithm = [gsa]
 objectivefunc = [F1]
 
 # Select number of repetitions for each experiment. 
@@ -73,31 +73,29 @@ atLeastOneIteration = False
 CnvgHeader = []
 # SolHeader=[]
 
-for l in range(0, iterations):
+for l in range(iterations):
     CnvgHeader.append("Iter" + str(l + 1))
     # SolHeader.append("Sol_Iter"+str(l+1))
 
-for i in range(0, len(Algorithm)):
-    for j in range(0, len(objectivefunc)):
-        if ((Algorithm[i] == True) and (
-                objectivefunc[j] == True)):  # start experiment if an Algorithm and an objective function is selected
-            for k in range(0, Runs):
+for j in range(len(objectivefunc)):
+    if objectivefunc[j]:  # start experiment if an Algorithm and an objective function is selected
+        for k in range(0, Runs):
 
-                func_details = benchmarks.getFunctionDetails(j)
-                x = selector(i, func_details, PopSize, iterations, chaotic_constant=chaotic_constant)
-                if (Export == True):
-                    with open(ExportToFile, 'a') as out:
-                        writer = csv.writer(out, delimiter=',')
-                        if (atLeastOneIteration == False):  # just one time to write the header of the CSV file
-                            header = numpy.concatenate(
-                                [["Optimizer", "objfname", "startTime", "EndTime", "ExecutionTime"], CnvgHeader])
-                            print(header)
-                            writer.writerow(header)
-                        a = numpy.concatenate(
-                            [[x.Algorithm, x.objectivefunc, x.startTime, x.endTime, x.executionTime], x.convergence])
-                        writer.writerow(a)
-                    out.close()
-                atLeastOneIteration = True  # at least one experiment
+            func_details = benchmarks.getFunctionDetails(j)
+            x = selector(func_details, PopSize, iterations, chaotic_constant=chaotic_constant)
+            if Export:
+                with open(ExportToFile, 'a') as out:
+                    writer = csv.writer(out, delimiter=',')
+                    if not atLeastOneIteration:  # just one time to write the header of the CSV file
+                        header = numpy.concatenate(
+                            [["Optimizer", "objfname", "startTime", "EndTime", "ExecutionTime"], CnvgHeader])
+                        print(header)
+                        writer.writerow(header)
+                    a = numpy.concatenate(
+                        [[x.algorithm, x.objective_function_name, x.start_time, x.end_time, x.execution_time], x.convergence])
+                    writer.writerow(a)
+                out.close()
+            atLeastOneIteration = True  # at least one experiment
 
-if (atLeastOneIteration == False):  # Faild to run at least one experiment
+if not atLeastOneIteration:  # Faild to run at least one experiment
     print("No Optomizer or Cost function is selected. Check lists of available optimizers and cost functions")

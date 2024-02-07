@@ -20,16 +20,36 @@ from functools import cache
 from typing import Tuple
 
 
-def g_constant(l, iters):
+def g_constant(curr_iter: int, max_iters: int) -> float:
+    """
+    Calculate the gravitational constant
+
+    Args:
+        curr_iter (int): Current iteration number
+        max_iters (int): Maximum number of iterations
+
+    Returns:
+        float: Gravitational constant
+
+    """
     alfa = 20
-    G0 = 100
-    Gimd = np.exp(-alfa*float(l)/iters)
-    G = G0*Gimd
+    g_zero = 100
+    Gimd = np.exp(-alfa*float(curr_iter)/max_iters)
+    G = g_zero * Gimd
     return G
 
 
 @cache
 def compute_x(i: int) -> float:
+    """
+    Compute the value of x at the i-th iteration
+
+    Args:
+        i (int): Current iteration number
+
+    Returns:
+        float: Value of x at the i-th iteration for the chaotic sinusoidal term
+    """
     if i == 0:
         return 0.7  # Initial value
     else:
@@ -39,6 +59,16 @@ def compute_x(i: int) -> float:
 
 
 def sin_chaotic_term(curr_iter: int, value: float) -> Tuple[float, float]:
+    """
+    Calculate the chaotic term using the sinusoidal chaotic map
+
+    Args:
+        curr_iter (int): Current iteration number
+        value (float): Value to be multiplied with the chaotic term
+
+    Returns:
+        Tuple[float, float]: Chaotic term and the value of x at the current iteration
+    """
     x = compute_x(curr_iter)
     chaotic_term = x * value
     return chaotic_term, x

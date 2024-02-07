@@ -19,87 +19,101 @@ import gField
 import massCalculation
 import move
 
-from gConstant import g_constant, sin_chaotic_term
-from solution import solution
+from gravitational_constant import g_constant, sin_chaotic_term
+from solution import Solution
 
 
-def GSA(objf,
-        lb,
-        ub,
-        dim,
-        PopSize,
-        iters,
+def GSA(objective_function,
+        lower_bound: float,
+        upper_bound: float,
+        dim: int,
+        population_size: int,
+        iters: int,
         chaotic_constant=False
         ):
+    """
+    Main function of Gravitational Search Algorithm
+
+    Args:
+        objective_function (callable): Objective function to be minimized
+        lower_bound (float): Lower bound of the search space
+        upper_bound (float): Upper bound of the search space
+        dim (int): Number of dimensions
+        population_size (int): Number of individuals in the population
+        iters (int): Maximum number of iterations
+        chaotic_constant (bool): True if chaotic constant is used, False otherwise
+
+    Returns:
+        solution: Best solution obtained
+    """
     # GSA parameters
-    ElitistCheck = 1
-    Rpower = 1
+    elitist_check = 1
+    r_power = 1
 
     # Chaotic constant parameters
-    wMax = 20
-    wMin = 1e-10
+    w_max = 20
+    w_min = 1e-10
 
-    s = solution()
+    s = Solution()
 
     """ Initializations """
+    vel = numpy.zeros((population_size, dim))
+    fit = numpy.zeros(population_size)
+    M = numpy.zeros(population_size)
+    g_best = numpy.zeros(dim)
+    g_best_score = float("inf")
 
-    vel = numpy.zeros((PopSize, dim))
-    fit = numpy.zeros(PopSize)
-    M = numpy.zeros(PopSize)
-    gBest = numpy.zeros(dim)
-    gBestScore = float("inf")
-
-    pos = numpy.random.uniform(0, 1, (PopSize, dim)) * (ub - lb) + lb
+    pos = numpy.random.uniform(low=0, high=1, size=(population_size, dim)) * (upper_bound - lower_bound) + lower_bound
 
     best_solution_history = []
     convergence_curve = numpy.zeros(iters)
 
-    print("GSA is optimizing  \"" + objf.__name__ + "\"")
+    print("GSA is optimizing  \"" + objective_function.__name__ + "\"")
 
-    timerStart = time.time()
+    timer_start = time.time()
     s.startTime = time.strftime("%Y-%m-%d-%H-%M-%S")
 
     for l in range(0, iters):
-        for i in range(0, PopSize):
-            l1 = [None] * dim
-            l1 = numpy.clip(pos[i, :], lb, ub)
+        for i in range(0, population_size):
+            l1 = numpy.clip(pos[i, :], lower_bound, upper_bound)
             pos[i, :] = l1
 
             # Calculate objective function for each particle
-            fitness = []
-            fitness = objf(l1)
+            fitness = objective_function(l1)
             fit[i] = fitness
 
-            if (gBestScore > fitness):
-                gBestScore = fitness
-                gBest = l1
+            if g_best_score > fitness:
+                g_best_score = fitness
+                g_best = l1
 
         """ Calculating Mass """
-        M = massCalculation.massCalculation(fit, PopSize, M)
+        M = massCalculation.massCalculation(fit, population_size, M)
 
         """ Calculating Gravitational Constant """
         G = g_constant(l, iters)
         if chaotic_constant:
-            chValue = wMax - l * ((wMax - wMin) / iters)
+            chValue = w_max - l * ((w_max - w_min) / iters)
             chaotic_term, _ = sin_chaotic_term(l, chValue)
             G += chaotic_term
+
         """ Calculating Gfield """
-        acc = gField.gField(PopSize, dim, pos, M, l, iters, G, ElitistCheck, Rpower)
+        acc = gField.gField(population_size, dim, pos, M, l, iters, G, elitist_check, r_power)
 
         """ Calculating Position """
-        pos, vel = move.move(PopSize, dim, pos, vel, acc)
+        pos, vel = move.move(population_size, dim, pos, vel, acc)
 
-        convergence_curve[l] = gBestScore
-        best_solution_history.append(gBest)
+        convergence_curve[l] = g_best_score
+        best_solution_history.append(g_best)
 
-        if (l % 1 == 0):
-            print(['At iteration ' + str(l + 1) + ' the best fitness is ' + str(gBestScore)]);
-    timerEnd = time.time()
+        if l % 1 == 0:
+            print(['At iteration ' + str(l + 1) + ' the best fitness is ' + str(g_best_score)])
+
+    timer_end = time.time()
     s.endTime = time.strftime("%Y-%m-%d-%H-%M-%S")
-    s.executionTime = timerEnd - timerStart
+    s.executionTime = timer_end - timer_start
     s.convergence = convergence_curve
     s.solution_history = best_solution_history
-    s.Algorithm = "GSA"
-    s.objectivefunc = objf.__name__
+    s.algorithm = "GSA"
+    s.objective_function_name = objective_function.__name__
 
     return s

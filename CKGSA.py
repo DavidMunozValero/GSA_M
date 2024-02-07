@@ -22,7 +22,7 @@ import math
 from solution import solution
 import time
 import massCalculation
-import gConstant
+from gravitational_constant import g_constant
 import ckgfield
 import move
 
@@ -71,7 +71,7 @@ def CKGSA(objf,lb,ub,dim,PopSize,iters):
         M = massCalculation.massCalculation(fit,PopSize,M)
 
         """ Calculating Gravitational Constant """        
-        G = gConstant.gConstant(l,iters)        
+        G = g_constant(l,iters)
         
         """ Calculating Gfield """        
         acc = ckgfield.ckgfield(PopSize,dim,pos,M,l,iters,G,ElitistCheck,Rpower,Variant)
