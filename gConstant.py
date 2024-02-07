@@ -16,10 +16,11 @@ Code compatible:
 
 import numpy as np
 
+from functools import cache
 from typing import Tuple
 
 
-def gConstant(l, iters):
+def g_constant(l, iters):
     alfa = 20
     G0 = 100
     Gimd = np.exp(-alfa*float(l)/iters)
@@ -27,11 +28,17 @@ def gConstant(l, iters):
     return G
 
 
-def sinChaoticTerm(curr_iter: int, value: float) -> Tuple[float, float]:
-    x = [0.7]
-    G_terms = []
-    for i in range(0, curr_iter+1):
-        x.append(2.3 * x[i]**2 * np.sin(np.pi*x[i]))
-        G_terms.append(x[i] * value)
+@cache
+def compute_x(i: int) -> float:
+    if i == 0:
+        return 0.7  # Initial value
+    else:
+        # Get the previous value of x
+        prev_x = compute_x(i-1)
+        return 2.3 * prev_x**2 * np.sin(np.pi * prev_x)
 
-    return G_terms[curr_iter], x[curr_iter]
+
+def sin_chaotic_term(curr_iter: int, value: float) -> Tuple[float, float]:
+    x = compute_x(curr_iter)
+    chaotic_term = x * value
+    return chaotic_term, x

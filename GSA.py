@@ -19,7 +19,7 @@ import gField
 import massCalculation
 import move
 
-from gConstant import gConstant, sinChaoticTerm
+from gConstant import g_constant, sin_chaotic_term
 from solution import solution
 
 
@@ -78,10 +78,10 @@ def GSA(objf,
         M = massCalculation.massCalculation(fit, PopSize, M)
 
         """ Calculating Gravitational Constant """
-        G = gConstant(l, iters)
+        G = g_constant(l, iters)
         if chaotic_constant:
             chValue = wMax - l * ((wMax - wMin) / iters)
-            chaotic_term, _ = sinChaoticTerm(l, chValue)
+            chaotic_term, _ = sin_chaotic_term(l, chValue)
             G += chaotic_term
         """ Calculating Gfield """
         acc = gField.gField(PopSize, dim, pos, M, l, iters, G, ElitistCheck, Rpower)
