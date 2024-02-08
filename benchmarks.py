@@ -11,20 +11,41 @@ The code template used is similar given at link: https://github.com/7ossam81/Evo
               and its parameters: function Name, lowerbound, upperbound, dimensions
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
 import numpy
-import math
+
+from numpy import signedinteger
+from typing import Any
 
 
-def F1(x):
-  """ Spere Function """
-  s=numpy.sum(x**2);
-  return s
+def F1(x: numpy.ndarray) -> signedinteger[Any]:
+    """
+    Spere Function
+
+    Args:
+      x: numpy.ndarray : input vector of decision variables
+
+    Returns:
+      float : output of the Sphere function
+    """
+    return numpy.sum(x ** 2)
 
 
-def getFunctionDetails(a):
-  # [name, lb, ub, dim]
-  param = {0: ["F1", -100, 100, 10]}
-  return param.get(a, "nothing")
+def get_function_details(a: int) -> Any:
+    """
+    Get the details of the benchmark function
+
+    Args:
+        a: int : index of the benchmark function
+
+    Returns:
+        Any : name, lower bound, upper bound, dimensions of the benchmark function
+    """
+    param = {0: {"function": F1,
+                 "lower_bound": -100,
+                 "upper_bound": 100,
+                 "dim": 10}
+             }
+    return param.get(a, "nothing")

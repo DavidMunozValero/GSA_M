@@ -13,13 +13,11 @@ Purpose: Main file of Chaotic Kbest Gravitational Search Algorithm(CKGSA)
             for minimizing of the Objective Function
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
-import random
 import numpy
-import math
-from solution import solution
+from solution import Solution
 import time
 import massCalculation
 from gravitational_constant import g_constant
@@ -32,7 +30,7 @@ def CKGSA(objf,lb,ub,dim,PopSize,iters):
     ElitistCheck =1
     Rpower = 1 
      
-    s=solution()
+    s = Solution()
         
     """ Initializations """
     Variant = 1
@@ -87,8 +85,8 @@ def CKGSA(objf,lb,ub,dim,PopSize,iters):
     s.endTime=time.strftime("%Y-%m-%d-%H-%M-%S")
     s.executionTime=timerEnd-timerStart
     s.convergence=convergence_curve
-    s.Algorithm="CKGSA"
-    s.objectivefunc=objf.__name__
+    s.algorithm= "CKGSA"
+    s.objective_function=objf.__name__
 
     return s
          

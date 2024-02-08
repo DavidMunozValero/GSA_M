@@ -11,12 +11,13 @@ Reference: "H. Mittal,R. Pal,A. Kulhari,and M. Saraswat,
 Purpose: Defining the cKgfield function for calculating the Force and acceleration
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
-import numpy
+import numpy as np
 import random
 import math
+
 
 def ckgfield(PopSize,dim,pos,M,l,iters,G,ElitistCheck,Rpower,Variant):
     final_per = 2
@@ -37,7 +38,7 @@ def ckgfield(PopSize,dim,pos,M,l,iters,G,ElitistCheck,Rpower,Variant):
     kbest = int(kbest)
     ds = sorted(range(len(M)), key=lambda k: M[k],reverse=True)
         
-    Force = numpy.zeros((PopSize,dim))
+    Force = np.zeros((PopSize,dim))
     # Force = Force.astype(int)
     
     for r in range(0,PopSize):
@@ -57,9 +58,9 @@ def ckgfield(PopSize,dim,pos,M,l,iters,G,ElitistCheck,Rpower,Variant):
                 
                 for k in range(0,dim):
                     randnum=random.random()
-                    Force[r,k] = Force[r,k]+randnum*(M[z])*((pos[z,k]-pos[r,k])/(R**Rpower+numpy.finfo(float).eps))
+                    Force[r,k] = Force[r,k]+randnum*(M[z])*((pos[z,k]-pos[r,k])/(R**Rpower+np.finfo(float).eps))
                     
-    acc = numpy.zeros((PopSize,dim))
+    acc = np.zeros((PopSize,dim))
     for x in range(0,PopSize):
         for y in range (0,dim):
             acc[x,y]=Force[x,y]*G

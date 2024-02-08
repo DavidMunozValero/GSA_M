@@ -11,17 +11,38 @@ Purpose: Defining the move Function
             for calculating the updated position
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
+import numpy as np
 import random
 
-def move(PopSize,dim,pos,vel,acc):
-    for i in range(0,PopSize):
-        for j in range (0,dim):
-            r1=random.random()
-#           r2=random.random()
-            vel[i,j]=r1*vel[i,j]+acc[i,j]
-            pos[i,j]=pos[i,j]+vel[i,j]
-    
-    return pos, vel
+from typing import Tuple
+
+
+def move(population_size: int,
+         dim: int,
+         position: np.ndarray,
+         velocity: np.ndarray,
+         acceleration: np.ndarray
+         ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Move the particles to the new position in the search space
+
+    Args:
+        population_size: int : population size
+        dim: int : dimension of the search space
+        position: np.ndarray : current position of the particles
+        velocity: np.ndarray : current velocity of the particles
+        acceleration: np.ndarray : current acceleration of the particles
+
+    Returns:
+        Tuple[np.ndarray, np.ndarray] : new position and velocity of the particles
+    """
+    for i in range(0, population_size):
+        for j in range(0, dim):
+            r1 = random.random()
+            velocity[i, j] = r1 * velocity[i, j] + acceleration[i, j]
+            position[i, j] = position[i, j] + velocity[i, j]
+
+    return position, velocity

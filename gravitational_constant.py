@@ -11,7 +11,7 @@ Purpose: Defining the gConstant Function
             for calculating the Gravitational Constant
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
 import numpy as np

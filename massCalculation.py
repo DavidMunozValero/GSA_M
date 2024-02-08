@@ -11,7 +11,7 @@ Purpose: Defining the massCalculation Function
             for calculating the mass
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 
 import numpy 

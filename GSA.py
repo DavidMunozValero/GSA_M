@@ -10,15 +10,15 @@ Purpose: Main file of Gravitational Search Algorithm(GSA)
             for minimizing of the Objective Function
 
 Code compatible:
- -- Python: 2.* or 3.*
+ -- Python >= 3.9
 """
 import numpy
 import time
 
-import gField
 import massCalculation
 import move
 
+from gField import g_field
 from gravitational_constant import g_constant, sin_chaotic_term
 from solution import Solution
 
@@ -96,8 +96,8 @@ def GSA(objective_function,
             chaotic_term, _ = sin_chaotic_term(l, chValue)
             G += chaotic_term
 
-        """ Calculating Gfield """
-        acc = gField.gField(population_size, dim, pos, M, l, iters, G, elitist_check, r_power)
+        """ Calculating G field """
+        acc = g_field(population_size, dim, pos, M, l, iters, G, elitist_check, r_power)
 
         """ Calculating Position """
         pos, vel = move.move(population_size, dim, pos, vel, acc)
