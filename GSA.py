@@ -73,8 +73,8 @@ def GSA(objective_function,
     timer_start = time.time()
     s.startTime = time.strftime("%Y-%m-%d-%H-%M-%S")
 
-    for l in range(0, iters):
-        for i in range(0, population_size):
+    for current_iter in range(iters):
+        for i in range(population_size):
             l1 = numpy.clip(pos[i, :], lower_bound, upper_bound)
             pos[i, :] = l1
 
@@ -90,23 +90,23 @@ def GSA(objective_function,
         M = massCalculation.massCalculation(fit, population_size, M)
 
         """ Calculating Gravitational Constant """
-        G = g_constant(l, iters)
+        G = g_constant(current_iter, iters)
         if chaotic_constant:
-            chValue = w_max - l * ((w_max - w_min) / iters)
-            chaotic_term, _ = sin_chaotic_term(l, chValue)
+            chValue = w_max - current_iter * ((w_max - w_min) / iters)
+            chaotic_term, _ = sin_chaotic_term(current_iter, chValue)
             G += chaotic_term
 
         """ Calculating G field """
-        acc = g_field(population_size, dim, pos, M, l, iters, G, elitist_check, r_power)
+        acc = g_field(population_size, dim, pos, M, current_iter, iters, G, elitist_check, r_power)
 
         """ Calculating Position """
         pos, vel = move.move(population_size, dim, pos, vel, acc)
 
-        convergence_curve[l] = g_best_score
+        convergence_curve[current_iter] = g_best_score
         best_solution_history.append(g_best)
 
-        if l % 1 == 0:
-            print(['At iteration ' + str(l + 1) + ' the best fitness is ' + str(g_best_score)])
+        if current_iter % 1 == 0:
+            print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
 
     timer_end = time.time()
     s.endTime = time.strftime("%Y-%m-%d-%H-%M-%S")

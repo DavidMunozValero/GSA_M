@@ -34,7 +34,7 @@ def g_constant(curr_iter: int, max_iters: int) -> float:
     """
     alfa = 20
     g_zero = 100
-    Gimd = np.exp(-alfa*float(curr_iter)/max_iters)
+    Gimd = np.exp(-alfa * float(curr_iter) / max_iters)
     G = g_zero * Gimd
     return G
 
@@ -52,10 +52,10 @@ def compute_x(i: int) -> float:
     """
     if i == 0:
         return 0.7  # Initial value
-    else:
-        # Get the previous value of x
-        prev_x = compute_x(i-1)
-        return 2.3 * prev_x**2 * np.sin(np.pi * prev_x)
+
+    # Get the previous value of x
+    prev_x = compute_x(i - 1)
+    return 2.3 * prev_x ** 2 * np.sin(np.pi * prev_x)
 
 
 def sin_chaotic_term(curr_iter: int, value: float) -> Tuple[float, float]:

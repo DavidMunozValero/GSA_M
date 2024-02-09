@@ -16,7 +16,10 @@ Code compatible:
 
 import numpy 
 
-def massCalculation(fit,PopSize,M):
+def massCalculation(fit,
+                    PopSize,
+                    M
+                    ):
     Fmax = max(fit)
     Fmin = min(fit)
     Fsum = sum(fit)        
