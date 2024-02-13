@@ -1,8 +1,9 @@
-import numpy
+import numpy as np
 import time
 
-from .utils import g_constant, g_field, mass_calculation, move, sin_chaotic_term
+from .utils import g_bin_constant, g_real_constant, g_real_field, g_bin_field, mass_calculation, move, sin_chaotic_term
 
+from typing import Any, List, Mapping, Tuple, Union
 
 class GSA:
     """
@@ -14,25 +15,28 @@ class GSA:
         optimize: Method to optimize the objective function using Gravitational Search Algorithm
     """
     def __init__(self,
-                 objective_function,
-                 lower_bound: float,
-                 upper_bound: float
+                 objective_function: callable,
+                 r_dim: int,
+                 d_dim: int,
+                 boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],  # {'real': [(lw, up), ( , )], 'discrete': [(0, 1), ( , )]}
                  ):
         """
         Initialize the GSA algorithm
 
         Args:
             objective_function (callable): Objective function to be minimized
-            lower_bound (float): Lower bound of the search space
-            upper_bound (float): Upper bound of the search space
-
-        Returns:
-            solution: Best solution obtained
+            r_dim (int): Number of dimensions of real variables
+            d_dim (int): Number of dimensions of discrete variables
+            boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable type
         """
         self.objective_function = objective_function
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-
+        self.r_dim = r_dim
+        assert self.r_dim == len(boundaries['real']), "The number of dimensions must be equal to the number of boundaries"
+        self.d_dim = d_dim
+        assert self.d_dim == len(boundaries['discrete']), "The number of dimensions must be equal to the number of boundaries"
+        self.t_dim = self.r_dim + self.d_dim
+        self.real_boundaries = np.array(boundaries['real'])
+        self.discrete_boundaries = np.array(boundaries['discrete'])
         self.objective_function_name = None
         self.solution_history = None
         self.convergence = None
@@ -40,8 +44,33 @@ class GSA:
         self.end_time = None
         self.execution_time = None
 
+    def _get_initial_positions(self,
+                               population_size: int
+        ) -> Mapping[str, np.ndarray]:
+        """
+        Method to get the initial positions of the individuals in the population
+
+        Args:
+            population_size (int): Number of individuals in the population
+
+        Returns:
+            Mapping[str, numpy.ndarray]: Dictionary with the initial positions of the individuals in the population
+        """
+        # Initialize random positions with boundaries for each individual
+        pos_r = np.zeros((population_size, self.r_dim))
+
+        for rd in range(self.r_dim):
+            rd_lb, rd_ub = self.real_boundaries[rd]
+            pos_r[:, rd] = np.random.uniform(low=rd_lb, high=rd_ub, size=(population_size, 1))
+
+        pos_d = np.zeros((population_size, self.d_dim))
+        for dd in range(self.d_dim):
+            dd_lb, dd_ub = self.discrete_boundaries[dd]
+            pos_d[:, dd] = np.random.uniform(low=dd_lb, high=dd_ub, size=(population_size, 1))
+
+        return {'real': pos_r, 'discrete': pos_d}
+
     def optimize(self,
-                 dim: int,
                  population_size: int,
                  iters: int,
                  elitist_check: int = 1,
@@ -54,7 +83,6 @@ class GSA:
         Method to optimize the objective function using Gravitational Search Algorithm
 
         Args:
-            dim (int): Number of dimensions
             population_size (int): Number of individuals in the population
             iters (int): Maximum number of iterations
             elitist_check (int): Elitist check parameter
@@ -64,19 +92,17 @@ class GSA:
             w_min (float): Minimum value of the chaotic term
         """
         # Initializations
-        vel = numpy.zeros((population_size, dim))
-        fit = numpy.zeros(population_size)
-        mass = numpy.zeros(population_size)
-        g_best = numpy.zeros(dim)
+        vel_r = np.zeros((population_size, self.r_dim))
+        vel_d = np.zeros((population_size, self.r_dim))
+        vel = {'real': vel_r, 'discrete': vel_d}
+        fit = np.zeros(population_size)
+        g_best = np.zeros(self.r_dim)
         g_best_score = float("inf")
 
-        pos = numpy.random.uniform(low=0,
-                                   high=1,
-                                   size=(population_size, dim)) * (
-                    self.upper_bound - self.lower_bound) + self.lower_bound
+        pos = self._get_initial_positions(population_size)
 
         best_solution_history = []
-        convergence_curve = numpy.zeros(iters)
+        convergence_curve = np.zeros(iters)
 
         print("GSA is optimizing  \"" + self.objective_function.__name__ + "\"")
 
@@ -85,9 +111,13 @@ class GSA:
 
         for current_iter in range(iters):
             for i in range(population_size):
-                l1 = numpy.clip(pos[i, :], self.lower_bound, self.upper_bound)
-                pos[i, :] = l1
+                l1_r = np.clip(pos['real'][i, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
+                l1_d = np.clip(pos['discrete'][i, :], self.discrete_boundaries[:, 0], self.discrete_boundaries[:, 1])
 
+                pos['real'][i, :] = l1_r
+                pos['discrete'][i, :] = l1_d
+
+                l1 = {'real': l1_r, 'discrete': l1_d}
                 # Calculate objective function for each particle
                 fitness = self.objective_function(l1)
                 fit[i] = fitness
@@ -100,14 +130,19 @@ class GSA:
             mass = mass_calculation(fit)
 
             # Calculating Gravitational Constant
-            G = g_constant(current_iter, iters)
+            G_real = g_real_constant(current_iter, iters)
+            G_bin = g_bin_constant(current_iter, iters)
+
             if chaotic_constant:
                 chValue = w_max - current_iter * ((w_max - w_min) / iters)
                 chaotic_term, _ = sin_chaotic_term(current_iter, chValue)
-                G += chaotic_term
+                G_real += chaotic_term
+                G_bin += chaotic_term
 
             # Calculating G field
-            acc = g_field(population_size, dim, pos, mass, current_iter, iters, G, elitist_check, r_power)
+            acc_r = g_real_field(population_size, self.r_dim, pos['real'], mass, current_iter, iters, G_real, elitist_check, r_power)
+            acc_d = g_bin_field(population_size, self.r_dim, pos['discrete'], mass, current_iter, iters, G_bin, elitist_check, r_power)
+            acc = {'real': acc_r, 'discrete': acc_d}
 
             # Calculating Position
             pos, vel = move(pos, vel, acc)
