@@ -14,13 +14,12 @@ Code compatible:
  -- Python >= 3.9
 """
 
-import numpy
+import numpy as np
 
-from numpy import signedinteger
-from typing import Any
+from typing import Any, Mapping
 
 
-def F1(x: numpy.ndarray) -> signedinteger[Any]:
+def F1(x: Mapping[str, np.ndarray]) -> np.signedinteger[Any]:
     """
     Spere Function
 
@@ -30,7 +29,7 @@ def F1(x: numpy.ndarray) -> signedinteger[Any]:
     Returns:
       float : output of the Sphere function
     """
-    return numpy.sum(x ** 2)
+    return np.sum(x['real'] ** 2)
 
 
 def get_function_details(a: int) -> Any:

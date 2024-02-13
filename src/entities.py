@@ -5,6 +5,7 @@ from .utils import g_bin_constant, g_real_constant, g_real_field, g_bin_field, m
 
 from typing import Any, List, Mapping, Tuple, Union
 
+
 class GSA:
     """
     Gravitational Search Algorithm
@@ -14,12 +15,13 @@ class GSA:
     Methods:
         optimize: Method to optimize the objective function using Gravitational Search Algorithm
     """
+
     def __init__(self,
                  objective_function: callable,
                  r_dim: int,
                  d_dim: int,
-                 boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],  # {'real': [(lw, up), ( , )], 'discrete': [(0, 1), ( , )]}
-                 ):
+                 boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
+                 ) -> None:
         """
         Initialize the GSA algorithm
 
@@ -31,12 +33,16 @@ class GSA:
         """
         self.objective_function = objective_function
         self.r_dim = r_dim
-        assert self.r_dim == len(boundaries['real']), "The number of dimensions must be equal to the number of boundaries"
+        assert self.r_dim == len(
+            boundaries['real']), "The number of dimensions must be equal to the number of boundaries"
         self.d_dim = d_dim
-        assert self.d_dim == len(boundaries['discrete']), "The number of dimensions must be equal to the number of boundaries"
+        assert self.d_dim == len(
+            boundaries['discrete']), "The number of dimensions must be equal to the number of boundaries"
         self.t_dim = self.r_dim + self.d_dim
+
         self.real_boundaries = np.array(boundaries['real'])
         self.discrete_boundaries = np.array(boundaries['discrete'])
+
         self.objective_function_name = None
         self.solution_history = None
         self.convergence = None
@@ -46,7 +52,7 @@ class GSA:
 
     def _get_initial_positions(self,
                                population_size: int
-        ) -> Mapping[str, np.ndarray]:
+                               ) -> Mapping[str, np.ndarray]:
         """
         Method to get the initial positions of the individuals in the population
 
@@ -59,14 +65,14 @@ class GSA:
         # Initialize random positions with boundaries for each individual
         pos_r = np.zeros((population_size, self.r_dim))
 
-        for rd in range(self.r_dim):
-            rd_lb, rd_ub = self.real_boundaries[rd]
-            pos_r[:, rd] = np.random.uniform(low=rd_lb, high=rd_ub, size=(population_size, 1))
+        for col_index in range(self.r_dim):
+            rd_lb, rd_ub = self.real_boundaries[col_index]
+            pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
 
         pos_d = np.zeros((population_size, self.d_dim))
-        for dd in range(self.d_dim):
-            dd_lb, dd_ub = self.discrete_boundaries[dd]
-            pos_d[:, dd] = np.random.uniform(low=dd_lb, high=dd_ub, size=(population_size, 1))
+        for col_index in range(self.d_dim):
+            dd_lb, dd_ub = self.discrete_boundaries[col_index]
+            pos_d[:, col_index] = np.random.uniform(low=dd_lb, high=dd_ub, size=population_size)
 
         return {'real': pos_r, 'discrete': pos_d}
 
@@ -93,10 +99,11 @@ class GSA:
         """
         # Initializations
         vel_r = np.zeros((population_size, self.r_dim))
-        vel_d = np.zeros((population_size, self.r_dim))
+        vel_d = np.zeros((population_size, self.d_dim))
         vel = {'real': vel_r, 'discrete': vel_d}
         fit = np.zeros(population_size)
-        g_best = np.zeros(self.r_dim)
+        mass = np.zeros(population_size)
+        g_best = {'real': np.zeros(self.r_dim), 'discrete': np.zeros(self.d_dim)}
         g_best_score = float("inf")
 
         pos = self._get_initial_positions(population_size)
@@ -111,8 +118,15 @@ class GSA:
 
         for current_iter in range(iters):
             for i in range(population_size):
-                l1_r = np.clip(pos['real'][i, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
-                l1_d = np.clip(pos['discrete'][i, :], self.discrete_boundaries[:, 0], self.discrete_boundaries[:, 1])
+                if self.r_dim > 0:
+                    l1_r = np.clip(pos['real'][i, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
+                else:
+                    l1_r = np.array([])
+                if self.d_dim > 0:
+                    l1_d = np.clip(pos['discrete'][i, :], self.discrete_boundaries[:, 0],
+                                   self.discrete_boundaries[:, 1])
+                else:
+                    l1_d = np.array([])
 
                 pos['real'][i, :] = l1_r
                 pos['discrete'][i, :] = l1_d
@@ -140,8 +154,16 @@ class GSA:
                 G_bin += chaotic_term
 
             # Calculating G field
-            acc_r = g_real_field(population_size, self.r_dim, pos['real'], mass, current_iter, iters, G_real, elitist_check, r_power)
-            acc_d = g_bin_field(population_size, self.r_dim, pos['discrete'], mass, current_iter, iters, G_bin, elitist_check, r_power)
+            if self.r_dim > 0:
+                acc_r = g_real_field(population_size, self.r_dim, pos['real'], mass, current_iter, iters, G_real,
+                                     elitist_check, r_power)
+            else:
+                acc_r = np.array([])
+            if self.d_dim > 0:
+                acc_d = g_bin_field(population_size, self.r_dim, pos['discrete'], mass, current_iter, iters, G_bin,
+                                    elitist_check, r_power)
+            else:
+                acc_d = np.array([])
             acc = {'real': acc_r, 'discrete': acc_d}
 
             # Calculating Position

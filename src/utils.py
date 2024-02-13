@@ -239,8 +239,8 @@ def move(position: Mapping[str, np.ndarray],
     position['real'] += velocity['real']  # Update position
 
     # Discrete space
-    r1 = np.random.random(position['discrete'].shape)  # Generate random coefficients for velocity update
-    velocity['discrete'] = r1 * velocity['discrete'] + acceleration['discrete']  # Update velocity
+    r2 = np.random.random(position['discrete'].shape)  # Generate random coefficients for velocity update
+    velocity['discrete'] = r2 * velocity['discrete'] + acceleration['discrete']  # Update velocity
     velocity['discrete'] = np.clip(velocity['discrete'], a_min=None, a_max=v_max)
     velocity['discrete'] = np.abs(np.tanh(velocity['discrete']))
 
