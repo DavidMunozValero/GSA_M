@@ -118,63 +118,36 @@ class GSA:
 
         for current_iter in range(iters):
             for i in range(population_size):
-                if self.r_dim > 0:
-                    l1_r = np.clip(pos['real'][i, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
-                else:
-                    l1_r = np.array([])
-                if self.d_dim > 0:
-                    l1_d = np.clip(pos['discrete'][i, :], self.discrete_boundaries[:, 0],
-                                   self.discrete_boundaries[:, 1])
-                else:
-                    l1_d = np.array([])
+                solution = self._clip_positions(pos=pos,
+                                                individual=i)
 
-                pos['real'][i, :] = l1_r
-                pos['discrete'][i, :] = l1_d
-
-                l1 = {'real': l1_r, 'discrete': l1_d}
                 # Calculate objective function for each particle
-                fitness = self.objective_function(l1)
+                fitness = self.objective_function(solution)
                 fit[i] = fitness
 
                 if g_best_score > fitness:
                     g_best_score = fitness
-                    g_best = l1
+                    g_best = solution
 
             # Calculating Mass
-            mass = mass_calculation(fit)
+            mass = mass_calculation(fit=fit)
 
             # Calculating Gravitational Constant
-            g_real, g_dis = self._calculate_gravitational_constants(current_iter, iters, chaotic_constant, w_max, w_min)
+            gravity_constant = self._calculate_gravitational_constants(current_iter=current_iter,
+                                                                       max_iters=iters,
+                                                                       chaotic_constant=chaotic_constant,
+                                                                       w_max=w_max,
+                                                                       w_min=w_min)
 
-            # Calculating G field
-            if self.r_dim > 0:
-                acc_r = g_field(population_size,
-                                self.r_dim,
-                                pos['real'],
-                                mass,
-                                current_iter,
-                                iters,
-                                g_real,
-                                elitist_check,
-                                r_power,
-                                real=True)
-            else:
-                acc_r = np.array([])
-
-            if self.d_dim > 0:
-                acc_d = g_field(population_size,
-                                self.r_dim,
-                                pos['discrete'],
-                                mass,
-                                current_iter,
-                                iters,
-                                g_dis,
-                                elitist_check,
-                                r_power,
-                                real=False)
-            else:
-                acc_d = np.array([])
-            acc = {'real': acc_r, 'discrete': acc_d}
+            # Calculate Acceleration
+            acc = self._calculate_acceleration(population_size=population_size,
+                                               pos=pos,
+                                               mass=mass,
+                                               current_iter=current_iter,
+                                               max_iters=iters,
+                                               gravity_constant=gravity_constant,
+                                               elitist_check=elitist_check,
+                                               r_power=r_power)
 
             # Calculating Position
             pos, vel = move(pos, vel, acc)
@@ -197,7 +170,7 @@ class GSA:
                                            chaotic_constant: bool,
                                            w_max: float,
                                            w_min: float
-                                           ) -> Tuple[float, float]:
+                                           ) -> Mapping[str, float]:
         """
         Method to calculate the gravitational constants
 
@@ -209,15 +182,95 @@ class GSA:
             w_min (float): Minimum value of the chaotic term
 
         Returns:
-            Tuple[float, float]: Gravitational constants for real and discrete variables
+            Mapping[str, float]: Gravitational constants for real and discrete variables
         """
         g_real = g_real_constant(current_iter, max_iters)
-        g_bin = g_bin_constant(current_iter, max_iters)
+        g_discrete = g_bin_constant(current_iter, max_iters)
 
         if chaotic_constant:
             ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
-            g_bin += chaotic_term
+            g_discrete += chaotic_term
 
-        return g_real, g_bin
+        return {'real': g_real, 'discrete': g_discrete}
+
+    def _calculate_acceleration(self,
+                                population_size: int,
+                                pos: Mapping[str, np.ndarray],
+                                mass: np.ndarray,
+                                current_iter: int,
+                                max_iters: int,
+                                gravity_constant: Mapping[str, float],
+                                elitist_check: int,
+                                r_power: int
+                                ) -> Mapping[str, np.ndarray]:
+        """
+        Method to calculate the acceleration acting on the particles
+
+        Args:
+            population_size (int): Number of individuals in the population
+            pos (Mapping[str, np.ndarray]): Current position of the particles
+            mass (np.ndarray): Mass of the particles
+            current_iter (int): Current iteration number
+            max_iters (int): Maximum number of iterations
+            gravity_constant (Mapping[str, float]): Gravitational constant for real and discrete variables
+            elitist_check (int): Elitist check parameter
+            r_power (int): Power of the distance
+
+        Returns:
+            Mapping[str, np.ndarray]: Acceleration acting on the particles
+        """
+        acc_r = g_field(population_size=population_size,
+                        dim=self.r_dim,
+                        pos=pos['real'],
+                        mass=mass,
+                        current_iter=current_iter,
+                        max_iters=max_iters,
+                        gravity_constant=gravity_constant['real'],
+                        elitist_check=elitist_check,
+                        r_power=r_power,
+                        real=True)
+
+        acc_d = g_field(population_size=population_size,
+                        dim=self.d_dim,
+                        pos=pos['discrete'],
+                        mass=mass,
+                        current_iter=current_iter,
+                        max_iters=max_iters,
+                        gravity_constant=gravity_constant['discrete'],
+                        elitist_check=elitist_check,
+                        r_power=r_power,
+                        real=False)
+
+        return {'real': acc_r, 'discrete': acc_d}
+
+    def _clip_positions(self,
+                        pos: Mapping[str, np.ndarray],
+                        individual: int
+                        ) -> Mapping[str, np.ndarray]:
+        """
+        Clip the positions of the individuals to the boundaries of the search space
+
+        Args:
+            pos (Mapping[str, np.ndarray]): Current position of the particles
+            individual (int): Index of the individual to be clipped
+
+        Returns:
+            Mapping[str, np.ndarray]: Clipped positions of the individuals
+        """
+        if self.r_dim > 0:
+            l1_r = np.clip(pos['real'][individual, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
+        else:
+            l1_r = np.array([])
+
+        if self.d_dim > 0:
+            l1_d = np.clip(pos['discrete'][individual, :], self.discrete_boundaries[:, 0],
+                           self.discrete_boundaries[:, 1])
+        else:
+            l1_d = np.array([])
+
+        pos['real'][individual, :] = l1_r
+        pos['discrete'][individual, :] = l1_d
+
+        return {'real': l1_r, 'discrete': l1_d}

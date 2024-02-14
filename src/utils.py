@@ -120,6 +120,9 @@ def g_field(population_size: int,
     Returns:
         np.ndarray : acceleration acting on the particles
     """
+    if not dim > 0:
+        return np.array([])
+
     final_per = 2
     if elitist_check == 1:
         k_best = final_per + (1 - current_iter / max_iters) * (100 - final_per)
