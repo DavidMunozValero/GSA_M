@@ -2,7 +2,6 @@ import math
 import numpy as np
 import random
 
-
 from functools import lru_cache
 from scipy.spatial.distance import hamming
 from typing import Mapping, Tuple
@@ -29,35 +28,39 @@ def mass_calculation(fit: np.ndarray) -> np.ndarray:
         return mass
 
 
-def g_bin_constant(curr_iter: int, max_iters: int) -> float:
+def g_bin_constant(curr_iter: int, max_iters: int, g_zero: float = 1) -> float:
     """
     Calculates the gravitational constant at the current iteration, which decays exponentially over iterations.
 
     Args:
         curr_iter (int): Current iteration number.
         max_iters (int): Maximum number of iterations.
+        g_zero (float): Initial value of the gravitational constant.
 
     Returns:
         float: Gravitational constant for the current iteration.
     """
-    g_zero = 100
     return g_zero * (1 - curr_iter / max_iters)
 
 
-def g_real_constant(curr_iter: int, max_iters: int) -> float:
+def g_real_constant(curr_iter: int,
+                    max_iters: int,
+                    alpha: float = 20,
+                    g_zero: float = 100
+                    ) -> float:
     """
     Calculates the gravitational constant at the current iteration, which decays exponentially over iterations.
 
     Args:
         curr_iter (int): Current iteration number.
         max_iters (int): Maximum number of iterations.
+        alpha (float): Decay rate of the gravitational constant.
+        g_zero (float): Initial value of the gravitational constant.
 
     Returns:
         float: Gravitational constant for the current iteration.
     """
-    alfa = 20
-    g_zero = 100
-    return g_zero * np.exp(-alfa * curr_iter / max_iters)
+    return g_zero * np.exp(-alpha * curr_iter / max_iters)
 
 
 @lru_cache(maxsize=None)
@@ -93,15 +96,15 @@ def sin_chaotic_term(curr_iter: int, value: float) -> Tuple[float, float]:
 
 
 def g_bin_field(population_size: int,
-            dim: int,
-            pos: np.ndarray,
-            mass: np.ndarray,
-            current_iter: int,
-            max_iters: int,
-            gravity_constant: float,
-            elitist_check: int,
-            r_power: int
-            ) -> np.ndarray:
+                dim: int,
+                pos: np.ndarray,
+                mass: np.ndarray,
+                current_iter: int,
+                max_iters: int,
+                gravity_constant: float,
+                elitist_check: int,
+                r_power: int
+                ) -> np.ndarray:
     """
     Calculate the force and acceleration acting on the particles
 
@@ -142,7 +145,8 @@ def g_bin_field(population_size: int,
 
                 for k in range(dim):
                     n = random.random()
-                    force[r, k] = force[r, k] + n * (mass[z]) * ((pos[z, k] - pos[r, k]) / (R ** r_power + np.finfo(float).eps))
+                    force[r, k] = force[r, k] + n * (mass[z]) * (
+                                (pos[z, k] - pos[r, k]) / (R ** r_power + np.finfo(float).eps))
 
     acc = np.zeros((population_size, dim))
     for x in range(population_size):
@@ -153,15 +157,15 @@ def g_bin_field(population_size: int,
 
 
 def g_real_field(population_size: int,
-            dim: int,
-            pos: np.ndarray,
-            mass: np.ndarray,
-            current_iter: int,
-            max_iters: int,
-            gravity_constant: float,
-            elitist_check: int,
-            r_power: int
-            ) -> np.ndarray:
+                 dim: int,
+                 pos: np.ndarray,
+                 mass: np.ndarray,
+                 current_iter: int,
+                 max_iters: int,
+                 gravity_constant: float,
+                 elitist_check: int,
+                 r_power: int
+                 ) -> np.ndarray:
     """
     Calculate the force and acceleration acting on the particles
 
@@ -206,7 +210,8 @@ def g_real_field(population_size: int,
                 R = math.sqrt(esum)
                 for k in range(dim):
                     n = random.random()
-                    force[r, k] = force[r, k] + n * (mass[z]) * ((pos[z, k] - pos[r, k]) / (R ** r_power + np.finfo(float).eps))
+                    force[r, k] = force[r, k] + n * (mass[z]) * (
+                                (pos[z, k] - pos[r, k]) / (R ** r_power + np.finfo(float).eps))
 
     acc = np.zeros((population_size, dim))
     for x in range(population_size):
@@ -217,10 +222,10 @@ def g_real_field(population_size: int,
 
 
 def move(position: Mapping[str, np.ndarray],
-              velocity: Mapping[str, np.ndarray],
-              acceleration: Mapping[str, np.ndarray],
-              v_max: int=6
-    ) -> Tuple[Mapping[str, np.ndarray], Mapping[str, np.ndarray]]:
+         velocity: Mapping[str, np.ndarray],
+         acceleration: Mapping[str, np.ndarray],
+         v_max: int = 6
+         ) -> Tuple[Mapping[str, np.ndarray], Mapping[str, np.ndarray]]:
     """
     Updates the position and velocity of particles in the search space based on their acceleration.
     This implementation leverages vectorized operations for efficiency.
