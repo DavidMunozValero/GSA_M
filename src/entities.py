@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-from .utils import g_bin_constant, g_real_constant, g_real_field, g_bin_field, mass_calculation, move, sin_chaotic_term
+from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, move, sin_chaotic_term
 
 from typing import Any, List, Mapping, Tuple, Union
 
@@ -144,24 +144,34 @@ class GSA:
             mass = mass_calculation(fit)
 
             # Calculating Gravitational Constant
-            G_real = g_real_constant(current_iter, iters)
-            G_bin = g_bin_constant(current_iter, iters)
-
-            if chaotic_constant:
-                chValue = w_max - current_iter * ((w_max - w_min) / iters)
-                chaotic_term, _ = sin_chaotic_term(current_iter, chValue)
-                G_real += chaotic_term
-                G_bin += chaotic_term
+            g_real, g_dis = self._calculate_gravitational_constants(current_iter, iters, chaotic_constant, w_max, w_min)
 
             # Calculating G field
             if self.r_dim > 0:
-                acc_r = g_real_field(population_size, self.r_dim, pos['real'], mass, current_iter, iters, G_real,
-                                     elitist_check, r_power)
+                acc_r = g_field(population_size,
+                                self.r_dim,
+                                pos['real'],
+                                mass,
+                                current_iter,
+                                iters,
+                                g_real,
+                                elitist_check,
+                                r_power,
+                                real=True)
             else:
                 acc_r = np.array([])
+
             if self.d_dim > 0:
-                acc_d = g_bin_field(population_size, self.r_dim, pos['discrete'], mass, current_iter, iters, G_bin,
-                                    elitist_check, r_power)
+                acc_d = g_field(population_size,
+                                self.r_dim,
+                                pos['discrete'],
+                                mass,
+                                current_iter,
+                                iters,
+                                g_dis,
+                                elitist_check,
+                                r_power,
+                                real=False)
             else:
                 acc_d = np.array([])
             acc = {'real': acc_r, 'discrete': acc_d}
@@ -180,3 +190,34 @@ class GSA:
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
         self.objective_function_name = self.objective_function.__name__
+
+    def _calculate_gravitational_constants(self,
+                                           current_iter: int,
+                                           max_iters: int,
+                                           chaotic_constant: bool,
+                                           w_max: float,
+                                           w_min: float
+                                           ) -> Tuple[float, float]:
+        """
+        Method to calculate the gravitational constants
+
+        Args:
+            current_iter (int): Current iteration
+            max_iters (int): Maximum number of iterations
+            chaotic_constant (bool): True if chaotic constant is used, False otherwise
+            w_max (float): Maximum value of the chaotic term
+            w_min (float): Minimum value of the chaotic term
+
+        Returns:
+            Tuple[float, float]: Gravitational constants for real and discrete variables
+        """
+        g_real = g_real_constant(current_iter, max_iters)
+        g_bin = g_bin_constant(current_iter, max_iters)
+
+        if chaotic_constant:
+            ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
+            chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
+            g_real += chaotic_term
+            g_bin += chaotic_term
+
+        return g_real, g_bin
