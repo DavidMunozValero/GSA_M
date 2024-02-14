@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data/output/experiment2024-02-09-00-07-37_True.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/notebooks/data/output/experiment2024-02-08-23-54-33_True.csv">
           <value>
             <Attribute>
