@@ -51,6 +51,7 @@ def gsa_svm_fitness(conf_matrix: pd.DataFrame,
     correctly_classified = tn + tp
     incorrectly_classified = fp + fn
     acc_i = correctly_classified / (correctly_classified + incorrectly_classified) * 100
+    print("\tClassification accuracy: ", acc_i)
     return acc_i * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * wf
 
 
