@@ -29,15 +29,13 @@ class GSA:
             objective_function (callable): Objective function to be minimized
             r_dim (int): Number of dimensions of real variables
             d_dim (int): Number of dimensions of discrete variables
-            boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable type
+            boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable
         """
         self.objective_function = objective_function
         self.r_dim = r_dim
-        assert self.r_dim == len(
-            boundaries['real']), "The number of dimensions must be equal to the number of boundaries"
+        assert self.r_dim == len(boundaries['real']), "Dimensions must be equal to the number of boundaries"
         self.d_dim = d_dim
-        assert self.d_dim == len(
-            boundaries['discrete']), "The number of dimensions must be equal to the number of boundaries"
+        assert self.d_dim == len(boundaries['discrete']), "Dimensions must be equal to the number of boundaries"
         self.t_dim = self.r_dim + self.d_dim
 
         self.real_boundaries = np.array(boundaries['real'])
@@ -72,7 +70,10 @@ class GSA:
         pos_d = np.zeros((population_size, self.d_dim))
         for col_index in range(self.d_dim):
             dd_lb, dd_ub = self.discrete_boundaries[col_index]
-            pos_d[:, col_index] = np.random.uniform(low=dd_lb, high=dd_ub, size=population_size)
+            while True:
+                pos_d[:, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
+                if sum(pos_d[:, col_index]) != 0:
+                    break
 
         return {'real': pos_r, 'discrete': pos_d}
 
