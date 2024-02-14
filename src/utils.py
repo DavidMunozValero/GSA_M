@@ -95,7 +95,7 @@ def sin_chaotic_term(curr_iter: int, value: float) -> Tuple[float, float]:
     return x * value, x
 
 
-def g_bin_field(population_size: int,
+def g_field(population_size: int,
             dim: int,
             pos: np.ndarray,
             mass: np.ndarray,
@@ -103,7 +103,8 @@ def g_bin_field(population_size: int,
             max_iters: int,
             gravity_constant: float,
             elitist_check: int,
-            r_power: int
+            r_power: int,
+            real: bool = True
             ) -> np.ndarray:
     """
     Calculate the force and acceleration acting on the particles
