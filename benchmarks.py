@@ -15,6 +15,7 @@ Code compatible:
 """
 
 import numpy as np
+import pandas as pd
 
 from typing import Any, Mapping
 
@@ -30,6 +31,27 @@ def F1(x: Mapping[str, np.ndarray]) -> np.signedinteger[Any]:
       float : output of the Sphere function
     """
     return np.sum(x['real'] ** 2)
+
+
+def gsa_svm_fitness(conf_matrix: pd.DataFrame,
+                    solution: Mapping[str, np.ndarray], wf: float = 0.2, wa: float = 0.8):
+    """
+    Fitness function for the GSA-SVM algorithm
+
+    Args:
+        conf_matrix (pd.DataFrame): confusion matrix
+        solution (Mapping[str, np.ndarray]): solution vector
+        wf (float): weight for the fitness function
+        wa (float): weight for the accuracy
+
+    Returns:
+        float: fitness value
+    """
+    tn, fp, fn, tp = conf_matrix.ravel()
+    correctly_classified = tn + tp
+    incorrectly_classified = fp + fn
+    acc_i = correctly_classified / (correctly_classified + incorrectly_classified) * 100
+    return acc_i * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * wf
 
 
 def get_function_details(a: int) -> Any:
