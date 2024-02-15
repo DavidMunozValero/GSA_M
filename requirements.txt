@@ -2,5 +2,7 @@ jupyter
 numpy
 scipy
 scikit-learn
+pyarrow
 pandas
 matplotlib
+ucimlrepo

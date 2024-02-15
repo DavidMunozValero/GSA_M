@@ -108,7 +108,7 @@ class GSA:
         fit = np.zeros(population_size)
         mass = np.zeros(population_size)
         g_best = {'real': np.zeros(self.r_dim), 'discrete': np.zeros(self.d_dim)}
-        g_best_score = float("inf")
+        g_best_score = float("-inf")
         best_acc = 0.0
 
         pos = self._get_initial_positions(population_size)
@@ -131,7 +131,7 @@ class GSA:
                 fitness, accuracy = self.objective_function(solution)
                 fit[i] = fitness
 
-                if g_best_score > fitness:
+                if g_best_score < fitness:
                     g_best_score = fitness
                     g_best = solution
                     best_acc = accuracy
@@ -200,7 +200,7 @@ class GSA:
             ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
-            g_discrete += chaotic_term
+            # g_discrete += chaotic_term
 
         return {'real': g_real, 'discrete': g_discrete}
 

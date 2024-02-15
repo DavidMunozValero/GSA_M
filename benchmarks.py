@@ -33,7 +33,7 @@ def F1(x: Mapping[str, np.ndarray]) -> np.signedinteger[Any]:
     return np.sum(x['real'] ** 2)
 
 
-def gsa_svm_fitness(conf_matrix: pd.DataFrame,
+def gsa_svm_fitness(accuracy: float,
                     solution: Mapping[str, np.ndarray],
                     wf: float = 0.2,
                     wa: float = 0.8
@@ -42,7 +42,7 @@ def gsa_svm_fitness(conf_matrix: pd.DataFrame,
     Fitness function for the GSA-SVM algorithm
 
     Args:
-        conf_matrix (pd.DataFrame): confusion matrix
+        accuracy (float): accuracy
         solution (Mapping[str, np.ndarray]): solution vector
         wf (float): weight for the fitness function
         wa (float): weight for the accuracy
@@ -50,10 +50,6 @@ def gsa_svm_fitness(conf_matrix: pd.DataFrame,
     Returns:
         Tuple[float, float]: fitness and accuracy
     """
-    tn, fp, fn, tp = conf_matrix.ravel()
-    correctly_classified = tn + tp
-    incorrectly_classified = fp + fn
-    accuracy = correctly_classified / (correctly_classified + incorrectly_classified) * 100
     fitness = accuracy * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * wf
     return fitness, accuracy
 
