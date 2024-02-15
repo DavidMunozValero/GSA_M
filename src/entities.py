@@ -43,6 +43,7 @@ class GSA:
 
         self.objective_function_name = None
         self.solution_history = None
+        self.accuracy_history = None
         self.convergence = None
         self.start_time = None
         self.end_time = None
@@ -69,7 +70,7 @@ class GSA:
             random_linear = np.random.uniform(low=np.log10(rd_lb), high=np.log10(rd_ub), size=population_size)
             pos_r[:, col_index] = population_size ** random_linear
 
-        pos_d = np.zeros((population_size, self.d_dim))
+        pos_d = np.zeros((population_size, self.d_dim)).astype(int)
         for col_index in range(self.d_dim):
             dd_lb, dd_ub = self.discrete_boundaries[col_index]
             while True:
@@ -77,7 +78,7 @@ class GSA:
                 if sum(pos_d[:, col_index]) != 0:
                     break
 
-        return {'real': pos_r, 'discrete': pos_d}
+        return {'real': pos_r, 'discrete': pos_d.astype(int)}
 
     def optimize(self,
                  population_size: int,
@@ -108,10 +109,12 @@ class GSA:
         mass = np.zeros(population_size)
         g_best = {'real': np.zeros(self.r_dim), 'discrete': np.zeros(self.d_dim)}
         g_best_score = float("inf")
+        best_acc = 0.0
 
         pos = self._get_initial_positions(population_size)
 
         best_solution_history = []
+        best_accuracy_history = []
         convergence_curve = np.zeros(iters)
 
         print("GSA is optimizing  \"" + self.objective_function.__name__ + "\"")
@@ -125,14 +128,13 @@ class GSA:
                                                 individual=i)
 
                 # Calculate objective function for each particle
-                fitness = self.objective_function(solution)
-                print("Individual: ", solution)
-                print("\tFitness: ", fitness)
+                fitness, accuracy = self.objective_function(solution)
                 fit[i] = fitness
 
                 if g_best_score > fitness:
                     g_best_score = fitness
                     g_best = solution
+                    best_acc = accuracy
 
             # Calculating Mass
             mass = mass_calculation(fit=fit)
@@ -159,6 +161,7 @@ class GSA:
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
+            best_accuracy_history.append(best_acc)
 
             print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
 
@@ -167,6 +170,7 @@ class GSA:
         self.execution_time = timer_end - timer_start
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
+        self.accuracy_history = best_accuracy_history
         self.objective_function_name = self.objective_function.__name__
 
     def _calculate_gravitational_constants(self,
@@ -271,7 +275,7 @@ class GSA:
 
         if self.d_dim > 0:
             l1_d = np.clip(pos['discrete'][individual, :], self.discrete_boundaries[:, 0],
-                           self.discrete_boundaries[:, 1])
+                           self.discrete_boundaries[:, 1]).astype(int)
         else:
             l1_d = np.array([])
 
