@@ -50,7 +50,7 @@ def gsa_svm_fitness(accuracy: float,
     Returns:
         Tuple[float, float]: fitness and accuracy
     """
-    fitness = accuracy * wa + ((1 - sum(solution['discrete']) / len(solution['discrete'])) * 100) * wf
+    fitness = accuracy * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * 100 * wf
     return fitness, accuracy
 
 

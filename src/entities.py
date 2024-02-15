@@ -124,8 +124,7 @@ class GSA:
 
         for current_iter in range(iters):
             for i in range(population_size):
-                solution = self._clip_positions(pos=pos,
-                                                individual=i)
+                solution = self._clip_positions(pos=pos, individual=i)
 
                 # Calculate objective function for each particle
                 fitness, accuracy = self.objective_function(solution)
@@ -268,16 +267,20 @@ class GSA:
         Returns:
             Mapping[str, np.ndarray]: Clipped positions of the individuals
         """
+
         if self.r_dim > 0:
             l1_r = np.clip(pos['real'][individual, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
         else:
             l1_r = np.array([])
 
+        """
         if self.d_dim > 0:
             l1_d = np.clip(pos['discrete'][individual, :], self.discrete_boundaries[:, 0],
                            self.discrete_boundaries[:, 1]).astype(int)
         else:
             l1_d = np.array([])
+        """
+        l1_d = pos['discrete'][individual, :].astype(int)
 
         pos['real'][individual, :] = l1_r
         pos['discrete'][individual, :] = l1_d

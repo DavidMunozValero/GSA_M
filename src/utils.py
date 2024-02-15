@@ -18,7 +18,6 @@ def mass_calculation(fit: np.ndarray) -> np.ndarray:
     Returns:
         np.ndarray: Normalized mass of the particles.
     """
-    # Normalize fitness values to [0, 1] to compute mass
     f_min, f_max = fit.min(), fit.max()
     if f_max == f_min:
         return np.ones(fit.shape) / len(fit)
@@ -157,8 +156,7 @@ def g_field(population_size: int,
 
                 for k in range(dim):
                     n = random.random()
-                    force[r, k] = force[r, k] + n * (mass[z]) * (
-                                (pos[z, k] - pos[r, k]) / (radius ** r_power + np.finfo(float).eps))
+                    force[r, k] = force[r, k] + n * (mass[z]) * ((pos[z, k] - pos[r, k]) / (radius ** r_power + np.finfo(float).eps))
 
     acc = np.zeros((population_size, dim))
     for x in range(population_size):
@@ -188,17 +186,20 @@ def move(position: Mapping[str, np.ndarray],
     """
     # Real space
     r1 = np.random.random(position['real'].shape)  # Generate random coefficients for velocity update
-    velocity['real'] = r1 * velocity['real'] + acceleration['real']  # Update velocity
+    velocity['real'] *= r1
+    velocity['real'] += acceleration['real']  # Update velocity
     position['real'] += velocity['real']  # Update position
 
     # Discrete space
     r2 = np.random.random(position['discrete'].shape)  # Generate random coefficients for velocity update
-    velocity['discrete'] = r2 * velocity['discrete'] + acceleration['discrete']  # Update velocity
-    velocity['discrete'] = np.clip(velocity['discrete'], a_min=None, a_max=v_max)
-    velocity['discrete'] = np.abs(np.tanh(velocity['discrete']))
+    velocity['discrete'] *= r2
+    velocity['discrete'] += acceleration['discrete']  # Update velocity
+    velocity['discrete'] = np.clip(velocity['discrete'], a_min=0.0, a_max=v_max)  # Clip velocity to the maximum value
+    velocity['discrete'] = np.abs(np.tanh(velocity['discrete']))  # Apply tanh activation function
 
     rand = np.random.rand(*velocity['discrete'].shape)
     position['discrete'][rand < velocity['discrete']] = 1 - position['discrete'][rand < velocity['discrete']]
+    position['discrete'] = position['discrete'].astype(int)
 
     for i in range(position['discrete'].shape[0]):
         if not np.any(position['discrete'][i]):
