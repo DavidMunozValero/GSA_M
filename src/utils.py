@@ -197,4 +197,12 @@ def move(position: Mapping[str, np.ndarray],
     velocity['discrete'] = np.clip(velocity['discrete'], a_min=None, a_max=v_max)
     velocity['discrete'] = np.abs(np.tanh(velocity['discrete']))
 
+    rand = np.random.rand(*velocity['discrete'].shape)
+    position['discrete'][rand < velocity['discrete']] = 1 - position['discrete'][rand < velocity['discrete']]
+
+    for i in range(position['discrete'].shape[0]):
+        if not np.any(position['discrete'][i]):
+            max_index = np.argmax(position['discrete'][i])
+            position['discrete'][i, max_index] = 1
+
     return position, velocity
