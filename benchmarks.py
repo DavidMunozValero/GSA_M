@@ -17,7 +17,7 @@ Code compatible:
 import numpy as np
 import pandas as pd
 
-from typing import Any, Mapping
+from typing import Any, Mapping, Tuple
 
 
 def F1(x: Mapping[str, np.ndarray]) -> np.signedinteger[Any]:
@@ -34,7 +34,10 @@ def F1(x: Mapping[str, np.ndarray]) -> np.signedinteger[Any]:
 
 
 def gsa_svm_fitness(conf_matrix: pd.DataFrame,
-                    solution: Mapping[str, np.ndarray], wf: float = 0.2, wa: float = 0.8):
+                    solution: Mapping[str, np.ndarray],
+                    wf: float = 0.2,
+                    wa: float = 0.8
+                    ) -> Tuple[float, float]:
     """
     Fitness function for the GSA-SVM algorithm
 
@@ -45,14 +48,14 @@ def gsa_svm_fitness(conf_matrix: pd.DataFrame,
         wa (float): weight for the accuracy
 
     Returns:
-        float: fitness value
+        Tuple[float, float]: fitness and accuracy
     """
     tn, fp, fn, tp = conf_matrix.ravel()
     correctly_classified = tn + tp
     incorrectly_classified = fp + fn
-    acc_i = correctly_classified / (correctly_classified + incorrectly_classified) * 100
-    print("\tClassification accuracy: ", acc_i)
-    return acc_i * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * wf
+    accuracy = correctly_classified / (correctly_classified + incorrectly_classified) * 100
+    fitness = accuracy * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * wf
+    return fitness, accuracy
 
 
 def get_function_details(a: int) -> Any:
