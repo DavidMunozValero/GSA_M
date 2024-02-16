@@ -66,9 +66,9 @@ class GSA:
 
         for col_index in range(self.r_dim):
             rd_lb, rd_ub = self.real_boundaries[col_index]
-            # pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
-            random_linear = np.random.uniform(low=np.log10(rd_lb), high=np.log10(rd_ub), size=population_size)
-            pos_r[:, col_index] = population_size ** random_linear
+            pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
+            # random_linear = np.random.uniform(low=np.log10(rd_lb), high=np.log10(rd_ub), size=population_size)
+            # pos_r[:, col_index] = population_size ** random_linear
 
         pos_d = np.zeros((population_size, self.d_dim)).astype(int)
         for col_index in range(self.d_dim):
