@@ -20,10 +20,12 @@ def mass_calculation(fit: np.ndarray) -> np.ndarray:
     """
     f_min, f_max = fit.min(), fit.max()
     if f_max == f_min:
+        # Same fit value for all particles, sum of masses will be 1
         return np.ones(fit.shape) / len(fit)
     else:
-        normalized_fit = (fit - f_max) / (f_min - f_max)
-        mass = normalized_fit / normalized_fit.sum()
+        # Normalize the fitness values and compute the mass
+        normalized_fit = (fit - f_min) / (f_max - f_min)  # Fitness values are normalized to [0, 1]
+        mass = normalized_fit / normalized_fit.sum()  # Mass is normalized to sum to 1
         return mass
 
 
@@ -39,7 +41,7 @@ def g_bin_constant(curr_iter: int, max_iters: int, g_zero: float = 1) -> float:
     Returns:
         float: Gravitational constant for the current iteration.
     """
-    return g_zero * (1 - curr_iter / max_iters)
+    return g_zero * (1 - (curr_iter / max_iters))
 
 
 def g_real_constant(curr_iter: int,
@@ -59,7 +61,7 @@ def g_real_constant(curr_iter: int,
     Returns:
         float: Gravitational constant for the current iteration.
     """
-    return g_zero * np.exp(-alpha * curr_iter / max_iters)
+    return g_zero * np.exp(- ((alpha * curr_iter) / max_iters))
 
 
 @lru_cache(maxsize=None)
@@ -101,8 +103,8 @@ def g_field(population_size: int,
             current_iter: int,
             max_iters: int,
             gravity_constant: float,
-            elitist_check: int,
             r_power: int,
+            elitist_check: bool = False,
             real: bool = True
             ) -> np.ndarray:
     """
@@ -116,8 +118,8 @@ def g_field(population_size: int,
         current_iter: int : current iteration number
         max_iters: int : maximum number of iterations
         gravity_constant: float : gravitational constant
-        elitist_check: int : elitist check parameter
         r_power: int : power of the distance
+        elitist_check: int : elitist check parameter
         real: bool : True if the search space is real, False otherwise (discrete)
 
     Returns:
@@ -133,14 +135,14 @@ def g_field(population_size: int,
     else:
         k_best = population_size
 
-    k_best = int(k_best)
+    # Index of the particles sorted by their mass (descending order)
     ds = sorted(range(len(mass)), key=lambda k: mass[k], reverse=True)
 
-    force = np.zeros((population_size, dim))
+    acc = np.zeros((population_size, dim))
     # force = Force.astype(int)
 
     for r in range(population_size):
-        for ii in range(0, k_best):
+        for ii in range(k_best):
             z = ds[ii]
             if z != r:
                 x = pos[r, :]
@@ -149,19 +151,14 @@ def g_field(population_size: int,
                     esum = 0
                     for t in range(dim):
                         imval = ((x[t] - y[t]) ** 2)
-                        esum = esum + imval
+                        esum += imval
                     radius = math.sqrt(esum)
                 else:
                     radius = hamming(x, y)
 
                 for k in range(dim):
                     n = random.random()
-                    force[r, k] = force[r, k] + n * (mass[z]) * ((pos[z, k] - pos[r, k]) / (radius ** r_power + np.finfo(float).eps))
-
-    acc = np.zeros((population_size, dim))
-    for x in range(population_size):
-        for y in range(dim):
-            acc[x, y] = force[x, y] * gravity_constant
+                    acc[r, k] += n * gravity_constant * (mass[z] / (radius + np.finfo(float).eps)) * (pos[z, k] - pos[r, k])
 
     return acc
 
@@ -194,11 +191,12 @@ def move(position: Mapping[str, np.ndarray],
     r2 = np.random.random(position['discrete'].shape)  # Generate random coefficients for velocity update
     velocity['discrete'] *= r2
     velocity['discrete'] += acceleration['discrete']  # Update velocity
-    velocity['discrete'] = np.clip(velocity['discrete'], a_min=0.0, a_max=v_max)  # Clip velocity to the maximum value
-    velocity['discrete'] = np.abs(np.tanh(velocity['discrete']))  # Apply tanh activation function
+    velocity['discrete'] = np.clip(velocity['discrete'], a_min=None, a_max=v_max)  # Clip velocity to the maximum value
 
-    rand = np.random.rand(*velocity['discrete'].shape)
-    position['discrete'][rand < velocity['discrete']] = 1 - position['discrete'][rand < velocity['discrete']]
+    discrete_move_probs = np.abs(np.tanh(velocity['discrete']))  # Apply tanh activation function
+    rand = np.random.rand(*discrete_move_probs.shape)
+
+    position['discrete'][rand < discrete_move_probs] = 1 - position['discrete'][rand < discrete_move_probs]
     position['discrete'] = position['discrete'].astype(int)
 
     for i in range(position['discrete'].shape[0]):
