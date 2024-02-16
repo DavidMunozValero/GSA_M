@@ -66,7 +66,7 @@ class GSA:
 
         for col_index in range(self.r_dim):
             rd_lb, rd_ub = self.real_boundaries[col_index]
-            #pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
+            # pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
             random_linear = np.random.uniform(low=np.log10(rd_lb), high=np.log10(rd_ub), size=population_size)
             pos_r[:, col_index] = population_size ** random_linear
 
@@ -83,8 +83,8 @@ class GSA:
     def optimize(self,
                  population_size: int,
                  iters: int,
-                 elitist_check: int = 1,
                  r_power: int = 1,
+                 elitist_check: bool = True,
                  chaotic_constant: bool = False,
                  w_max: float = 20.0,
                  w_min: float = 1e-10,
@@ -95,8 +95,8 @@ class GSA:
         Args:
             population_size (int): Number of individuals in the population
             iters (int): Maximum number of iterations
-            elitist_check (int): Elitist check parameter
             r_power (int): Power of the distance
+            elitist_check (bool): Elitist check
             chaotic_constant (bool): True if chaotic constant is used, False otherwise
             w_max (float): Maximum value of the chaotic term
             w_min (float): Minimum value of the chaotic term
@@ -130,7 +130,7 @@ class GSA:
                 fitness, accuracy = self.objective_function(solution)
                 fit[i] = fitness
 
-                if g_best_score < fitness:
+                if fitness > g_best_score:
                     g_best_score = fitness
                     g_best = solution
                     best_acc = accuracy
@@ -152,8 +152,8 @@ class GSA:
                                                current_iter=current_iter,
                                                max_iters=iters,
                                                gravity_constant=gravity_constant,
-                                               elitist_check=elitist_check,
-                                               r_power=r_power)
+                                               r_power=r_power,
+                                               elitist_check=elitist_check)
 
             # Calculating Position
             pos, vel = move(pos, vel, acc)
@@ -210,8 +210,8 @@ class GSA:
                                 current_iter: int,
                                 max_iters: int,
                                 gravity_constant: Mapping[str, float],
-                                elitist_check: int,
-                                r_power: int
+                                r_power: int,
+                                elitist_check: bool = True
                                 ) -> Mapping[str, np.ndarray]:
         """
         Method to calculate the acceleration acting on the particles
@@ -223,8 +223,8 @@ class GSA:
             current_iter (int): Current iteration number
             max_iters (int): Maximum number of iterations
             gravity_constant (Mapping[str, float]): Gravitational constant for real and discrete variables
-            elitist_check (int): Elitist check parameter
             r_power (int): Power of the distance
+            elitist_check (bool): Elitist check
 
         Returns:
             Mapping[str, np.ndarray]: Acceleration acting on the particles
@@ -236,8 +236,8 @@ class GSA:
                         current_iter=current_iter,
                         max_iters=max_iters,
                         gravity_constant=gravity_constant['real'],
-                        elitist_check=elitist_check,
                         r_power=r_power,
+                        elitist_check=elitist_check,
                         real=True)
 
         acc_d = g_field(population_size=population_size,
@@ -247,8 +247,8 @@ class GSA:
                         current_iter=current_iter,
                         max_iters=max_iters,
                         gravity_constant=gravity_constant['discrete'],
-                        elitist_check=elitist_check,
                         r_power=r_power,
+                        elitist_check=elitist_check,
                         real=False)
 
         return {'real': acc_r, 'discrete': acc_d}
@@ -273,14 +273,11 @@ class GSA:
         else:
             l1_r = np.array([])
 
-        """
         if self.d_dim > 0:
             l1_d = np.clip(pos['discrete'][individual, :], self.discrete_boundaries[:, 0],
                            self.discrete_boundaries[:, 1]).astype(int)
         else:
             l1_d = np.array([])
-        """
-        l1_d = pos['discrete'][individual, :].astype(int)
 
         pos['real'][individual, :] = l1_r
         pos['discrete'][individual, :] = l1_d
