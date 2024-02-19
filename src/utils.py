@@ -22,11 +22,11 @@ def mass_calculation(fit: np.ndarray) -> np.ndarray:
     if f_max == f_min:
         # Same fit value for all particles, sum of masses will be 1
         return np.ones(fit.shape) / len(fit)
-    else:
-        # Normalize the fitness values and compute the mass
-        normalized_fit = (fit - f_min) / (f_max - f_min)  # Fitness values are normalized to [0, 1]
-        mass = normalized_fit / normalized_fit.sum()  # Mass is normalized to sum to 1
-        return mass
+
+    # Normalize the fitness values and compute the mass
+    normalized_fit = (fit - f_min) / (f_max - f_min)  # Fitness values are normalized to [0, 1]
+    mass = normalized_fit / normalized_fit.sum()  # Mass is normalized to sum to 1
+    return mass
 
 
 def g_bin_constant(curr_iter: int, max_iters: int, g_zero: float = 1) -> float:

@@ -199,7 +199,7 @@ class GSA:
             ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
-            # g_discrete += chaotic_term
+            g_discrete += chaotic_term
 
         return {'real': g_real, 'discrete': g_discrete}
 
