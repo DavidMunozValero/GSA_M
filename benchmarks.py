@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Python code of Gravitational Search Algorithm (GSA)
 Reference: Rashedi, Esmat, Hossein Nezamabadi-Pour, and Saeid Saryazdi. "GSA: a gravitational search algorithm." 
@@ -7,8 +6,7 @@ Reference: Rashedi, Esmat, Hossein Nezamabadi-Pour, and Saeid Saryazdi. "GSA: a 
 Coded by: Mukesh Saraswat (saraswatmukesh@gmail.com), Himanshu Mittal (emailid: himanshu.mittal224@gmail.com) and Raju Pal (emailid: raju3131.pal@gmail.com)
 The code template used is similar given at link: https://github.com/7ossam81/EvoloPy and matlab version of GSA at mathworks.
 
- -- Purpose: Defining the benchmark function code 
-              and its parameters: function Name, lowerbound, upperbound, dimensions
+ -- Purpose: Defining the benchmark function for the Gravitational Search Algorithm (GSA)
 
 Code compatible:
  -- Python >= 3.9
@@ -52,21 +50,3 @@ def gsa_svm_fitness(accuracy: float,
     """
     fitness = accuracy * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * 100 * wf
     return fitness, accuracy
-
-
-def get_function_details(a: int) -> Any:
-    """
-    Get the details of the benchmark function
-
-    Args:
-        a: int : index of the benchmark function
-
-    Returns:
-        Any : name, lower bound, upper bound, dimensions of the benchmark function
-    """
-    param = {0: {"function": F1,
-                 "lower_bound": -100,
-                 "upper_bound": 100,
-                 "dim": 10}
-             }
-    return param.get(a, "nothing")

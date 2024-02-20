@@ -22,6 +22,7 @@ class GSA:
                  r_dim: int,
                  d_dim: int,
                  boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
+                 repair_solution: bool = False
                  ) -> None:
         """
         Initialize the GSA algorithm
@@ -36,13 +37,12 @@ class GSA:
         self.objective_function = objective_function
         self.is_feasable = is_feasible
         self.r_dim = r_dim
-        assert self.r_dim == len(boundaries['real']), "Dimensions must be equal to the number of boundaries"
         self.d_dim = d_dim
-        assert self.d_dim == len(boundaries['discrete']), "Dimensions must be equal to the number of boundaries"
         self.t_dim = self.r_dim + self.d_dim
 
         self.real_boundaries = np.array(boundaries['real'])
         self.discrete_boundaries = np.array(boundaries['discrete'])
+        self.repair_solution = repair_solution
 
         self.objective_function_name = self.objective_function.__name__
         self.solution_history = None
