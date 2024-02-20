@@ -18,6 +18,7 @@ class GSA:
 
     def __init__(self,
                  objective_function: callable,
+                 is_feasible: callable,
                  r_dim: int,
                  d_dim: int,
                  boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
@@ -27,11 +28,13 @@ class GSA:
 
         Args:
             objective_function (callable): Objective function to be minimized
+            is_feasible (callable): Function to check the feasibility of the solution
             r_dim (int): Number of dimensions of real variables
             d_dim (int): Number of dimensions of discrete variables
             boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable
         """
         self.objective_function = objective_function
+        self.is_feasable = is_feasible
         self.r_dim = r_dim
         assert self.r_dim == len(boundaries['real']), "Dimensions must be equal to the number of boundaries"
         self.d_dim = d_dim
@@ -41,7 +44,7 @@ class GSA:
         self.real_boundaries = np.array(boundaries['real'])
         self.discrete_boundaries = np.array(boundaries['discrete'])
 
-        self.objective_function_name = None
+        self.objective_function_name = self.objective_function.__name__
         self.solution_history = None
         self.accuracy_history = None
         self.convergence = None
@@ -67,8 +70,6 @@ class GSA:
         for col_index in range(self.r_dim):
             rd_lb, rd_ub = self.real_boundaries[col_index]
             pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
-            # random_linear = np.random.uniform(low=np.log10(rd_lb), high=np.log10(rd_ub), size=population_size)
-            # pos_r[:, col_index] = population_size ** random_linear
 
         pos_d = np.zeros((population_size, self.d_dim)).astype(int)
         for col_index in range(self.d_dim):
@@ -78,7 +79,14 @@ class GSA:
                 if sum(pos_d[:, col_index]) != 0:
                     break
 
-        return {'real': pos_r, 'discrete': pos_d.astype(int)}
+        initial_pop = {'real': pos_r, 'discrete': pos_d}
+        for sol in range(population_size):
+            solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
+            if not self.is_feasable(solution):
+                initial_pop = self._get_initial_positions(population_size)
+                break
+
+        return initial_pop
 
     def optimize(self,
                  population_size: int,
@@ -111,6 +119,7 @@ class GSA:
         g_best_score = float("-inf")
         best_acc = 0.0
 
+        # TODO: Make sure the initial population individuals are feasible
         pos = self._get_initial_positions(population_size)
 
         best_solution_history = []
@@ -124,7 +133,8 @@ class GSA:
 
         for current_iter in range(iters):
             for i in range(population_size):
-                solution = self._clip_positions(pos=pos, individual=i)
+                solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
+                # solution = self._clip_positions(pos=pos, individual=i)
 
                 # Calculate objective function for each particle
                 fitness, accuracy = self.objective_function(solution)
@@ -170,7 +180,6 @@ class GSA:
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
         self.accuracy_history = best_accuracy_history
-        self.objective_function_name = self.objective_function.__name__
 
     def _calculate_gravitational_constants(self,
                                            current_iter: int,
