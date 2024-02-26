@@ -18,11 +18,12 @@ class GSA:
 
     def __init__(self,
                  objective_function: callable,
-                 is_feasible: callable,
                  r_dim: int,
                  d_dim: int,
                  boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
-                 repair_solution: bool = False
+                 is_feasible: Union[callable, None] = None,
+                 repair_solution: bool = False,
+                 initial_populations: Union[List, None] = None
                  ) -> None:
         """
         Initialize the GSA algorithm
@@ -35,11 +36,14 @@ class GSA:
             boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable
         """
         self.objective_function = objective_function
-        self.is_feasable = is_feasible
+        if is_feasible is None:
+            self.is_feasible = lambda _: True
+        self.is_feasible = is_feasible
         self.r_dim = r_dim
         self.d_dim = d_dim
         self.t_dim = self.r_dim + self.d_dim
 
+        self.boundaries = boundaries
         self.real_boundaries = np.array(boundaries['real'])
         self.discrete_boundaries = np.array(boundaries['discrete'])
         self.repair_solution = repair_solution
@@ -82,7 +86,7 @@ class GSA:
         initial_pop = {'real': pos_r, 'discrete': pos_d}
         for sol in range(population_size):
             solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
-            if not self.is_feasable(solution):
+            if not self.is_feasible(solution):
                 initial_pop = self._get_initial_positions(population_size)
                 break
 
@@ -166,7 +170,7 @@ class GSA:
                                                elitist_check=elitist_check)
 
             # Calculating Position
-            pos, vel = move(pos, vel, acc)
+            pos, vel = move(pos, vel, acc, population_size)
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
@@ -292,3 +296,97 @@ class GSA:
         pos['discrete'][individual, :] = l1_d
 
         return {'real': l1_r, 'discrete': l1_d}
+
+    def _move(self,
+              position: Mapping[str, np.ndarray],
+              velocity: Mapping[str, np.ndarray],
+              acceleration: Mapping[str, np.ndarray],
+              population: int = 1,
+              v_max: int = 6
+              ) -> Tuple[Mapping[str, np.ndarray], Mapping[str, np.ndarray]]:
+        """
+        Updates the position and velocity of particles in the search space based on their acceleration.
+        This implementation leverages vectorized operations for efficiency.
+
+        Args:
+            position (Mapping[str, np.ndarray]): Current positions of the particles.
+            velocity (Mapping[str, np.ndarray]): Current velocities of the particles.
+            acceleration (Mapping[str, np.ndarray]): Current accelerations of the particles.
+            population (int): Number of particles.
+            v_max (int): Maximum velocity of the particles.
+        Returns:
+            Tuple[np.ndarray, np.ndarray]: Updated position and velocity of the particles.
+        """
+        for i in range(population):
+            # Update real vars
+            r1 = np.random.random(position['real'][i].shape)  # Generate random coefficients for velocity update
+            velocity['real'][i] = velocity['real'][i] * r1 + acceleration['real'][i]
+            position['real'][i] = position['real'][i] + velocity['real'][i]  # Update position
+
+            # Update discrete vars
+            r2 = np.random.random(position['discrete'][i].shape)  # Generate random coefficients for velocity update
+            velocity['discrete'][i] = velocity['discrete'][i] * r2 + acceleration['discrete'][i]
+            velocity['discrete'][i] = np.clip(velocity['discrete'][i], a_min=None, a_max=v_max)
+
+            discrete_move_probs = np.abs(np.tanh(velocity['discrete'][i]))  # Apply tanh activation function
+            rand = np.random.rand(*discrete_move_probs.shape)
+
+            position['discrete'][i][rand < discrete_move_probs] = 1 - position['discrete'][i][
+                rand < discrete_move_probs]
+            position['discrete'][i] = position['discrete'][i].astype(int)
+
+            if not np.any(position['discrete'][i]):
+                max_index = np.argmax(position['discrete'][i])
+                position['discrete'][i, max_index] = 1
+
+            new_solution = {'real': position['real'][i, :], 'discrete': position['discrete'][i, :]}
+
+            if not self.is_feasible(new_solution):
+                if not self.repair_solution:
+                    new_solution = self._clip_positions(pos=new_solution, individual=i)
+                else:
+                    new_solution = self._repair_solution(solution=new_solution,
+                                                         individual=i,
+                                                         population=position)
+
+            position['real'][i, :] = new_solution['real']
+            position['discrete'][i, :] = new_solution['discrete']
+
+        return position, velocity
+
+    def _repair_solution(self,
+                         solution: Mapping[str, np.ndarray],
+                         individual: int,
+                         population: Mapping[str, np.ndarray]
+                         ) -> Mapping[str, np.ndarray]:
+        """
+        Repairs the solution by clipping it to the boundaries of the search space.
+
+        Args:
+            solution (Mapping[str, np.ndarray]): Solution to be repaired.
+
+        Returns:
+            Mapping[str, np.ndarray]: Repaired solution.
+        """
+        # Calculate distance from individual to the other individuals (Euclidean distance for real variables)
+        # and Hamming distance for discrete variables, exlcuding the individual itself
+        real_distances = {}
+        discrete_distances = {}
+        for i in range(len(population)):
+            if i != individual:
+                # Calculate distance
+                real_distances[i] = np.linalg.norm(solution['real'] - population['real'][i])
+                # Hamming distance for discrete variables
+                discrete_distances[i] = np.sum(solution['discrete'] != population['discrete'][i])
+
+        # Sort distances
+        sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
+        sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
+
+        # Get the closest individual
+        closest_real = sorted_real_distances[0][0]
+        closest_discrete = sorted_discrete_distances[0][0]
+
+        # TODO: Repair solution
+
+        return solution
