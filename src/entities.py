@@ -1,7 +1,7 @@
 import numpy as np
 import time
 
-from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, move, sin_chaotic_term
+from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, sin_chaotic_term
 
 from typing import Any, List, Mapping, Tuple, Union
 
@@ -138,7 +138,6 @@ class GSA:
         for current_iter in range(iters):
             for i in range(population_size):
                 solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
-                # solution = self._clip_positions(pos=pos, individual=i)
 
                 # Calculate objective function for each particle
                 fitness, accuracy = self.objective_function(solution)
@@ -170,7 +169,7 @@ class GSA:
                                                elitist_check=elitist_check)
 
             # Calculating Position
-            pos, vel = move(pos, vel, acc, population_size)
+            pos, vel = self._move(pos, vel, acc, population_size)
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
@@ -360,7 +359,7 @@ class GSA:
                          population: Mapping[str, np.ndarray]
                          ) -> Mapping[str, np.ndarray]:
         """
-        Repairs the solution by clipping it to the boundaries of the search space.
+        Repair the solution to make it feasible
 
         Args:
             solution (Mapping[str, np.ndarray]): Solution to be repaired.
@@ -368,8 +367,12 @@ class GSA:
         Returns:
             Mapping[str, np.ndarray]: Repaired solution.
         """
+        print("#"*100)
+        print("REPAIRING SOLUTION... ")
+        print("#"*100)
+
         # Calculate distance from individual to the other individuals (Euclidean distance for real variables)
-        # and Hamming distance for discrete variables, exlcuding the individual itself
+        # and Hamming distance for discrete variables, excluding the individual itself
         real_distances = {}
         discrete_distances = {}
         for i in range(len(population)):
@@ -383,10 +386,30 @@ class GSA:
         sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
         sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
 
-        # Get the closest individual
-        closest_real = sorted_real_distances[0][0]
-        closest_discrete = sorted_discrete_distances[0][0]
+        # Unfeasible individual
+        S_real = solution['real']
+        S_discrete = solution['discrete']
 
-        # TODO: Repair solution
+        # Closest feasible individual
+        R_real = population['real'][sorted_real_distances[0][0]]
+        R_discrete = population['discrete'][sorted_discrete_distances[1][0]]
 
+        while True:
+            X_real = []
+            for i in range(len(S_real)):
+                a = np.random.uniform(0, 1)
+                X_real.append(a * R_real[i] + (1 - a) * S_real[i])
+
+            X_discrete = []
+            for i in range(len(S_discrete)):
+                a = np.random.uniform(0, 1)
+                X_discrete.append(round(a * R_discrete[i] + (1 - a) * S_discrete[i]))
+
+            X = {'real': X_real, 'discrete': X_discrete}
+            if self.is_feasible(X):
+                break
+
+        print("#" * 100)
+        print("SOLUTION SUCCESSFULLY REPAIRED!!")
+        print("#" * 100)
         return solution
