@@ -3,7 +3,7 @@ import numpy as np
 import random
 
 from functools import lru_cache
-from scipy.spatial.distance import hamming
+from scipy.spatial.distance import euclidean, hamming
 from typing import Mapping, Tuple
 
 
@@ -148,11 +148,7 @@ def g_field(population_size: int,
                 x = pos[r, :]
                 y = pos[z, :]
                 if real:
-                    esum = 0
-                    for t in range(dim):
-                        imval = ((x[t] - y[t]) ** 2)
-                        esum += imval
-                    radius = math.sqrt(esum)
+                    radius = euclidean(x, y)
                 else:
                     radius = hamming(x, y)
 

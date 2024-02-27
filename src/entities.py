@@ -3,6 +3,7 @@ import time
 
 from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, sin_chaotic_term
 
+from scipy.spatial.distance import euclidean, hamming
 from typing import Any, List, Mapping, Tuple, Union
 
 
@@ -22,8 +23,6 @@ class GSA:
                  d_dim: int,
                  boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
                  is_feasible: Union[callable, None] = None,
-                 repair_solution: bool = False,
-                 initial_populations: Union[List, None] = None
                  ) -> None:
         """
         Initialize the GSA algorithm
@@ -46,7 +45,6 @@ class GSA:
         self.boundaries = boundaries
         self.real_boundaries = np.array(boundaries['real'])
         self.discrete_boundaries = np.array(boundaries['discrete'])
-        self.repair_solution = repair_solution
 
         self.objective_function_name = self.objective_function.__name__
         self.solution_history = None
@@ -98,6 +96,7 @@ class GSA:
                  r_power: int = 1,
                  elitist_check: bool = True,
                  chaotic_constant: bool = False,
+                 repair_solution: bool = False,
                  w_max: float = 20.0,
                  w_min: float = 1e-10,
                  ) -> None:
@@ -168,8 +167,13 @@ class GSA:
                                                r_power=r_power,
                                                elitist_check=elitist_check)
 
-            # Calculating Position
-            pos, vel = self._move(pos, vel, acc, population_size)
+            # Calculate Position
+            pos, vel = self._move(position=pos,
+                                  velocity=vel,
+                                  acceleration=acc,
+                                  population=population_size,
+                                  v_max=6,
+                                  repair_solution=repair_solution)
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
@@ -301,7 +305,8 @@ class GSA:
               velocity: Mapping[str, np.ndarray],
               acceleration: Mapping[str, np.ndarray],
               population: int = 1,
-              v_max: int = 6
+              v_max: int = 6,
+              repair_solution: bool = False
               ) -> Tuple[Mapping[str, np.ndarray], Mapping[str, np.ndarray]]:
         """
         Updates the position and velocity of particles in the search space based on their acceleration.
@@ -313,16 +318,18 @@ class GSA:
             acceleration (Mapping[str, np.ndarray]): Current accelerations of the particles.
             population (int): Number of particles.
             v_max (int): Maximum velocity of the particles.
+            repair_solution (bool): True if the solution should be repaired, False otherwise.
+
         Returns:
             Tuple[np.ndarray, np.ndarray]: Updated position and velocity of the particles.
         """
         for i in range(population):
-            # Update real vars
+            # Update real variables
             r1 = np.random.random(position['real'][i].shape)  # Generate random coefficients for velocity update
             velocity['real'][i] = velocity['real'][i] * r1 + acceleration['real'][i]
             position['real'][i] = position['real'][i] + velocity['real'][i]  # Update position
 
-            # Update discrete vars
+            # Update discrete variables
             r2 = np.random.random(position['discrete'][i].shape)  # Generate random coefficients for velocity update
             velocity['discrete'][i] = velocity['discrete'][i] * r2 + acceleration['discrete'][i]
             velocity['discrete'][i] = np.clip(velocity['discrete'][i], a_min=None, a_max=v_max)
@@ -341,7 +348,7 @@ class GSA:
             new_solution = {'real': position['real'][i, :], 'discrete': position['discrete'][i, :]}
 
             if not self.is_feasible(new_solution):
-                if not self.repair_solution:
+                if not repair_solution:
                     new_solution = self._clip_positions(pos=new_solution, individual=i)
                 else:
                     new_solution = self._repair_solution(solution=new_solution,
@@ -371,18 +378,13 @@ class GSA:
         print("REPAIRING SOLUTION... ")
         print("#"*100)
 
-        # Calculate distance from individual to the other individuals (Euclidean distance for real variables)
-        # and Hamming distance for discrete variables, excluding the individual itself
         real_distances = {}
         discrete_distances = {}
         for i in range(len(population)):
             if i != individual:
-                # Calculate distance
-                real_distances[i] = np.linalg.norm(solution['real'] - population['real'][i])
-                # Hamming distance for discrete variables
-                discrete_distances[i] = np.sum(solution['discrete'] != population['discrete'][i])
+                real_distances[i] = euclidean(solution['real'], population['real'][i])
+                discrete_distances[i] = hamming(solution['discrete'], population['discrete'][i])
 
-        # Sort distances
         sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
         sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
 
@@ -392,24 +394,23 @@ class GSA:
 
         # Closest feasible individual
         R_real = population['real'][sorted_real_distances[0][0]]
-        R_discrete = population['discrete'][sorted_discrete_distances[1][0]]
+        R_discrete = population['discrete'][sorted_discrete_distances[0][0]]
 
-        while True:
+        S = {'real': S_real, 'discrete': S_discrete}
+        while not self.is_feasible(S):
             X_real = []
             for i in range(len(S_real)):
-                a = np.random.uniform(0, 1)
+                a = np.random.uniform(low=0, high=1)
                 X_real.append(a * R_real[i] + (1 - a) * S_real[i])
 
             X_discrete = []
             for i in range(len(S_discrete)):
-                a = np.random.uniform(0, 1)
-                X_discrete.append(round(a * R_discrete[i] + (1 - a) * S_discrete[i]))
+                a = np.random.uniform(low=0, high=1)
+                X_discrete.append(round(float(a * R_discrete[i] + (1 - a) * S_discrete[i])))
 
-            X = {'real': X_real, 'discrete': X_discrete}
-            if self.is_feasible(X):
-                break
+            S = {'real': X_real, 'discrete': X_discrete}
 
         print("#" * 100)
         print("SOLUTION SUCCESSFULLY REPAIRED!!")
         print("#" * 100)
-        return solution
+        return S
