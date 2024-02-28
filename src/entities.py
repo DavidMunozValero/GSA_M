@@ -122,7 +122,6 @@ class GSA:
         g_best_score = float("-inf")
         best_acc = 0.0
 
-        # TODO: Make sure the initial population individuals are feasible
         pos = self._get_initial_positions(population_size)
 
         best_solution_history = []
