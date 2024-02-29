@@ -1,6 +1,8 @@
 import numpy as np
 import time
 
+import pandas as pd
+
 from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, sin_chaotic_term
 
 from scipy.spatial.distance import euclidean, hamming
@@ -99,7 +101,7 @@ class GSA:
                  repair_solution: bool = False,
                  w_max: float = 20.0,
                  w_min: float = 1e-10,
-                 ) -> None:
+                 ) -> pd.DataFrame:
         """
         Method to optimize the objective function using Gravitational Search Algorithm
 
@@ -109,8 +111,12 @@ class GSA:
             r_power (int): Power of the distance
             elitist_check (bool): Elitist check
             chaotic_constant (bool): True if chaotic constant is used, False otherwise
+            repair_solution (bool): True if the solution should be repaired, False otherwise
             w_max (float): Maximum value of the chaotic term
             w_min (float): Minimum value of the chaotic term
+
+        Returns:
+            pd.DataFrame: Dataframe with the history of the optimization process
         """
         # Initializations
         vel_r = np.zeros((population_size, self.r_dim))
@@ -132,6 +138,8 @@ class GSA:
 
         timer_start = time.time()
         self.start_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+
+        history = pd.DataFrame(columns=['Iteration', 'Fitness', 'Accuracy', 'ExecutionTime', 'Discrete', 'Real'])
 
         for current_iter in range(iters):
             for i in range(population_size):
@@ -155,6 +163,8 @@ class GSA:
                                                                        chaotic_constant=chaotic_constant,
                                                                        w_max=w_max,
                                                                        w_min=w_min)
+
+            history.loc[len(history)] = [current_iter, g_best_score, best_acc, time.time() - timer_start, pos['discrete'], pos['real']]
 
             # Calculate Acceleration
             acc = self._calculate_acceleration(population_size=population_size,
@@ -186,6 +196,8 @@ class GSA:
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
         self.accuracy_history = best_accuracy_history
+
+        return history
 
     def _calculate_gravitational_constants(self,
                                            current_iter: int,

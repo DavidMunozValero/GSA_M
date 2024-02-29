@@ -6,4 +6,5 @@ scikit-learn
 pyarrow
 pandas
 matplotlib
+seaborn
 ucimlrepo
