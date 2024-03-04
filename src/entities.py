@@ -93,6 +93,7 @@ class GSA:
         return initial_pop
 
     def optimize(self,
+                 train_data: Tuple[np.ndarray, np.ndarray],
                  population_size: int,
                  iters: int,
                  r_power: int = 1,
@@ -106,6 +107,7 @@ class GSA:
         Method to optimize the objective function using Gravitational Search Algorithm
 
         Args:
+            train_data (Tuple[np.ndarray, np.ndarray]): Tuple with the training data and labels
             population_size (int): Number of individuals in the population
             iters (int): Maximum number of iterations
             r_power (int): Power of the distance
@@ -144,9 +146,8 @@ class GSA:
         for current_iter in range(iters):
             for i in range(population_size):
                 solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
-
                 # Calculate objective function for each particle
-                fitness, accuracy = self.objective_function(solution)
+                fitness, accuracy = self.objective_function(solution, (train_data[0][i], train_data[1][i]))
                 fit[i] = fitness
 
                 if fitness > g_best_score:
@@ -228,7 +229,7 @@ class GSA:
             ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
-            g_discrete += (chaotic_term / 100)
+            g_discrete += chaotic_term
             # print("Chaotic Term: ", chaotic_term)
 
         return {'real': g_real, 'discrete': g_discrete}
