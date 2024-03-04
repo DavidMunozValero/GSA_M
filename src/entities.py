@@ -221,12 +221,15 @@ class GSA:
         """
         g_real = g_real_constant(current_iter, max_iters)
         g_discrete = g_bin_constant(current_iter, max_iters)
+        # print("G_real: ", g_real)
+        # print("G_discrete: ", g_discrete)
 
         if chaotic_constant:
             ch_value = w_max - current_iter * ((w_max - w_min) / max_iters)
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
-            g_discrete += chaotic_term
+            g_discrete += (chaotic_term / 100)
+            # print("Chaotic Term: ", chaotic_term)
 
         return {'real': g_real, 'discrete': g_discrete}
 
