@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import random
 import time
 
 import pandas as pd
@@ -93,7 +95,6 @@ class GSA:
         return initial_pop
 
     def optimize(self,
-                 train_data: Tuple[np.ndarray, np.ndarray],
                  population_size: int,
                  iters: int,
                  r_power: int = 1,
@@ -107,7 +108,6 @@ class GSA:
         Method to optimize the objective function using Gravitational Search Algorithm
 
         Args:
-            train_data (Tuple[np.ndarray, np.ndarray]): Tuple with the training data and labels
             population_size (int): Number of individuals in the population
             iters (int): Maximum number of iterations
             r_power (int): Power of the distance
@@ -147,7 +147,7 @@ class GSA:
             for i in range(population_size):
                 solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
                 # Calculate objective function for each particle
-                fitness, accuracy = self.objective_function(solution, (train_data[0][i], train_data[1][i]))
+                fitness, accuracy = self.objective_function(solution)
                 fit[i] = fitness
 
                 if fitness > g_best_score:
@@ -429,3 +429,14 @@ class GSA:
         print("SOLUTION SUCCESSFULLY REPAIRED!!")
         print("#" * 100)
         return S
+
+    def set_seed(self, seed: int) -> None:
+        """
+        Set seed for the random number generator.
+
+        Args:
+            seed (int): Seed for the random number generator.
+        """
+        random.seed(seed)
+        np.random.seed(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)
