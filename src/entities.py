@@ -175,7 +175,7 @@ class GSA:
                                                                        w_max=w_max,
                                                                        w_min=w_min)
 
-            history.loc[len(history)] = [current_iter, g_best_score, best_acc, time.time() - timer_start, pos['discrete'], pos['real']]
+            history.loc[len(history)] = [current_iter, g_best_score, best_acc, time.time() - timer_start, g_best["discrete"], g_best['real']]
 
             # Calculate Acceleration
             acc = self._calculate_acceleration(population_size=population_size,
@@ -421,6 +421,7 @@ class GSA:
         R_discrete = population['discrete'][sorted_discrete_distances[0][0]]
 
         S = {'real': S_real, 'discrete': S_discrete}
+        patience = 1000
         while not self.is_feasible(S):
             X_real = []
             for i in range(len(S_real)):
@@ -432,7 +433,12 @@ class GSA:
                 a = np.random.uniform(low=0, high=1)
                 X_discrete.append(round(float(a * R_discrete[i] + (1 - a) * S_discrete[i])))
 
+            if patience == 0:
+                print("Patience is over. Returning the closest feasible solution.")
+                return {"real": R_real, "discrete": R_discrete}
+
             S = {'real': X_real, 'discrete': X_discrete}
+            patience -= 1
 
         print("#" * 100)
         print("SOLUTION SUCCESSFULLY REPAIRED!!")
