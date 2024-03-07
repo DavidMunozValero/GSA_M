@@ -50,3 +50,12 @@ def gsa_svm_fitness(accuracy: float,
     """
     fitness = accuracy * wa + (1 - sum(solution['discrete']) / len(solution['discrete'])) * 100 * wf
     return fitness, accuracy
+
+
+def get_number_of_trains(scheduled: np.ndarray) -> int:
+    return np.sum(scheduled)
+
+def get_manager_benefit(scheduled: np.ndarray,
+                        manager_benefit: np.ndarray
+                        ) -> float:
+    return np.sum(scheduled * manager_benefit)
