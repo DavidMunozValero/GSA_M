@@ -70,6 +70,8 @@ class GSA:
         Returns:
             Mapping[str, numpy.ndarray]: Dictionary with the initial positions of the individuals in the population
         """
+        print("Initializing positions of the individuals in the population...")
+
         # Initialize random positions with boundaries for each individual
         pos_r = np.zeros((population_size, self.r_dim))
 
@@ -85,14 +87,22 @@ class GSA:
                 if sum(pos_d[:, col_index]) != 0:
                     break
 
-        initial_pop = {'real': pos_r, 'discrete': pos_d}
         for sol in range(population_size):
             solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
-            if not self.is_feasible(solution):
-                initial_pop = self._get_initial_positions(population_size)
-                break
+            iters = 0
+            while not self.is_feasible(solution):
+                # Regenerate the solution
+                if self.r_dim > 0:
+                    pos_r[sol, :] = np.random.uniform(low=rd_lb, high=rd_ub, size=self.r_dim)
+                if self.d_dim > 0:
+                    prob = 1.0 / (1 + iters)
+                    pos_d[sol, :] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=self.d_dim, p=[1-prob, prob])
+                iters += 1
 
-        return initial_pop
+                solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
+
+        print("Positions of the individuals in the population successfully initialized!!")
+        return {'real': pos_r, 'discrete': pos_d}
 
     def optimize(self,
                  population_size: int,
@@ -285,7 +295,7 @@ class GSA:
         return {'real': acc_r, 'discrete': acc_d}
 
     def _clip_positions(self,
-                        pos: Mapping[str, np.ndarray],
+                        solution: Mapping[str, np.ndarray],
                         individual: int
                         ) -> Mapping[str, np.ndarray]:
         """
@@ -300,18 +310,15 @@ class GSA:
         """
 
         if self.r_dim > 0:
-            l1_r = np.clip(pos['real'][individual, :], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
+            l1_r = np.clip(solution['real'], self.real_boundaries[:, 0], self.real_boundaries[:, 1])
         else:
             l1_r = np.array([])
 
         if self.d_dim > 0:
-            l1_d = np.clip(pos['discrete'][individual, :], self.discrete_boundaries[:, 0],
+            l1_d = np.clip(solution['discrete'], self.discrete_boundaries[:, 0],
                            self.discrete_boundaries[:, 1]).astype(int)
         else:
             l1_d = np.array([])
-
-        pos['real'][individual, :] = l1_r
-        pos['discrete'][individual, :] = l1_d
 
         return {'real': l1_r, 'discrete': l1_d}
 
@@ -339,32 +346,34 @@ class GSA:
             Tuple[np.ndarray, np.ndarray]: Updated position and velocity of the particles.
         """
         for i in range(population):
-            # Update real variables
-            r1 = np.random.random(position['real'][i].shape)  # Generate random coefficients for velocity update
-            velocity['real'][i] = velocity['real'][i] * r1 + acceleration['real'][i]
-            position['real'][i] = position['real'][i] + velocity['real'][i]  # Update position
+            # Update real variables (if any)
+            if self.r_dim > 0:
+                r1 = np.random.random(position['real'][i].shape)  # Generate random coefficients for velocity update
+                velocity['real'][i] = velocity['real'][i] * r1 + acceleration['real'][i]
+                position['real'][i] = position['real'][i] + velocity['real'][i]  # Update position
 
-            # Update discrete variables
-            r2 = np.random.random(position['discrete'][i].shape)  # Generate random coefficients for velocity update
-            velocity['discrete'][i] = velocity['discrete'][i] * r2 + acceleration['discrete'][i]
-            velocity['discrete'][i] = np.clip(velocity['discrete'][i], a_min=None, a_max=v_max)
+            # Update discrete variables (if any)
+            if self.d_dim > 0:
+                r2 = np.random.random(position['discrete'][i].shape)  # Generate random coefficients for velocity update
+                velocity['discrete'][i] = velocity['discrete'][i] * r2 + acceleration['discrete'][i]
+                velocity['discrete'][i] = np.clip(velocity['discrete'][i], a_min=None, a_max=v_max)
 
-            discrete_move_probs = np.abs(np.tanh(velocity['discrete'][i]))  # Apply tanh activation function
-            rand = np.random.rand(*discrete_move_probs.shape)
+                discrete_move_probs = np.abs(np.tanh(velocity['discrete'][i]))  # Apply tanh activation function
+                rand = np.random.rand(*discrete_move_probs.shape)
 
-            position['discrete'][i][rand < discrete_move_probs] = 1 - position['discrete'][i][
-                rand < discrete_move_probs]
-            position['discrete'][i] = position['discrete'][i].astype(int)
+                position['discrete'][i][rand < discrete_move_probs] = 1 - position['discrete'][i][
+                    rand < discrete_move_probs]
+                position['discrete'][i] = position['discrete'][i].astype(int)
 
-            if not np.any(position['discrete'][i]):
-                max_index = np.argmax(position['discrete'][i])
-                position['discrete'][i, max_index] = 1
+                if not np.any(position['discrete'][i]):
+                    max_index = np.argmax(position['discrete'][i])
+                    position['discrete'][i, max_index] = 1
 
             new_solution = {'real': position['real'][i, :], 'discrete': position['discrete'][i, :]}
 
             if not self.is_feasible(new_solution):
                 if not repair_solution:
-                    new_solution = self._clip_positions(pos=new_solution, individual=i)
+                    new_solution = self._clip_positions(solution=new_solution, individual=i)
                 else:
                     new_solution = self._repair_solution(solution=new_solution,
                                                          individual=i,
