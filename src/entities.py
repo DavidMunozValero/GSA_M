@@ -437,7 +437,7 @@ class GSA:
                 print("Patience is over. Returning the closest feasible solution.")
                 return {"real": R_real, "discrete": R_discrete}
 
-            S = {'real': X_real, 'discrete': X_discrete}
+            S = {'real': np.array(X_real), 'discrete': np.array(X_discrete)}
             patience -= 1
 
         print("#" * 100)
