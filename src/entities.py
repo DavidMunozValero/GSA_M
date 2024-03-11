@@ -7,6 +7,7 @@ import pandas as pd
 
 from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, sin_chaotic_term
 
+from copy import deepcopy
 from scipy.spatial.distance import euclidean, hamming
 from typing import Any, List, Mapping, Tuple, Union
 
@@ -72,36 +73,30 @@ class GSA:
         """
         print("Initializing positions of the individuals in the population...")
 
-        # Initialize random positions with boundaries for each individual
-        pos_r = np.zeros((population_size, self.r_dim))
+        # Initialize random positions within boundaries for real-valued features
+        pos_r = np.array([np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
+                          for rd_lb, rd_ub in self.real_boundaries]).T
 
-        for col_index in range(self.r_dim):
-            rd_lb, rd_ub = self.real_boundaries[col_index]
-            pos_r[:, col_index] = np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
+        # Initialize random positions for discrete-valued features
+        pos_d = np.array([np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
+                          for dd_lb, dd_ub in self.discrete_boundaries]).T
 
-        pos_d = np.zeros((population_size, self.d_dim)).astype(int)
-        for col_index in range(self.d_dim):
-            dd_lb, dd_ub = self.discrete_boundaries[col_index]
-            while not sum(pos_d[:, col_index]):
-                pos_d[:, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
-
+        # Ensure solutions are feasible; regenerate if not
         for sol in range(population_size):
             solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
             iters = 0
-            while not self.is_feasible(solution):
-                # Regenerate the solution
+            while not self.is_feasible(
+                    solution) and iters < 100:  # Adding a max iteration count to prevent infinite loops
                 if self.r_dim > 0:
-                    pos_r[sol, :] = np.random.uniform(low=rd_lb, high=rd_ub, size=self.r_dim)
+                    for col_index, (rd_lb, rd_ub) in enumerate(self.real_boundaries):
+                        pos_r[sol, col_index] = np.random.uniform(low=rd_lb, high=rd_ub)
                 if self.d_dim > 0:
-                    # prob = 1.0 / (1 + iters)
-                    prob = 0.5
-                    pos_d[sol, :] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=self.d_dim, p=[1-prob, prob])
-
-                # Random sample a feasible solution from the candidate solutions
+                    for col_index, (dd_lb, dd_ub) in enumerate(self.discrete_boundaries):
+                        pos_d[sol, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1))
                 solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
                 iters += 1
 
-        print("Positions of the individuals in the population successfully initialized!!")
+        print("Positions of the individuals in the population successfully initialized!")
         return {'real': pos_r, 'discrete': pos_d}
 
     def optimize(self,
@@ -161,7 +156,9 @@ class GSA:
 
                 if fitness > g_best_score:
                     g_best_score = fitness
-                    g_best = solution
+                    g_best = deepcopy(solution)
+
+            history.loc[len(history)] = [current_iter, g_best_score, time.time() - timer_start, g_best["discrete"], g_best['real']]
 
             # Calculating Mass
             mass = mass_calculation(fit=fit)
@@ -172,8 +169,6 @@ class GSA:
                                                                        chaotic_constant=chaotic_constant,
                                                                        w_max=w_max,
                                                                        w_min=w_min)
-
-            history.loc[len(history)] = [current_iter, g_best_score, time.time() - timer_start, g_best["discrete"], g_best['real']]
 
             # Calculate Acceleration
             acc = self._calculate_acceleration(population_size=population_size,
@@ -236,7 +231,6 @@ class GSA:
             chaotic_term, _ = sin_chaotic_term(current_iter, ch_value)
             g_real += chaotic_term
             g_discrete += chaotic_term
-            # print("Chaotic Term: ", chaotic_term)
 
         return {'real': g_real, 'discrete': g_discrete}
 
