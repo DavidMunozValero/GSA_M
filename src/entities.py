@@ -82,10 +82,8 @@ class GSA:
         pos_d = np.zeros((population_size, self.d_dim)).astype(int)
         for col_index in range(self.d_dim):
             dd_lb, dd_ub = self.discrete_boundaries[col_index]
-            while True:
+            while not sum(pos_d[:, col_index]):
                 pos_d[:, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
-                if sum(pos_d[:, col_index]) != 0:
-                    break
 
         for sol in range(population_size):
             solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
@@ -95,11 +93,13 @@ class GSA:
                 if self.r_dim > 0:
                     pos_r[sol, :] = np.random.uniform(low=rd_lb, high=rd_ub, size=self.r_dim)
                 if self.d_dim > 0:
-                    prob = 1.0 / (1 + iters)
+                    # prob = 1.0 / (1 + iters)
+                    prob = 0.5
                     pos_d[sol, :] = np.random.choice(a=range(dd_lb, dd_ub + 1), size=self.d_dim, p=[1-prob, prob])
-                iters += 1
 
+                # Random sample a feasible solution from the candidate solutions
                 solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
+                iters += 1
 
         print("Positions of the individuals in the population successfully initialized!!")
         return {'real': pos_r, 'discrete': pos_d}
@@ -138,12 +138,11 @@ class GSA:
         mass = np.zeros(population_size)
         g_best = {'real': np.zeros(self.r_dim), 'discrete': np.zeros(self.d_dim)}
         g_best_score = float("-inf")
-        best_acc = 0.0
 
         pos = self._get_initial_positions(population_size)
+        print(f"Initial population: {pos}")
 
         best_solution_history = []
-        best_accuracy_history = []
         convergence_curve = np.zeros(iters)
 
         print("GSA is optimizing  \"" + self.objective_function.__name__ + "\"")
@@ -151,19 +150,18 @@ class GSA:
         timer_start = time.time()
         self.start_time = time.strftime("%Y-%m-%d-%H-%M-%S")
 
-        history = pd.DataFrame(columns=['Iteration', 'Fitness', 'Accuracy', 'ExecutionTime', 'Discrete', 'Real'])
+        history = pd.DataFrame(columns=['Iteration', 'Fitness', 'ExecutionTime', 'Discrete', 'Real'])
 
         for current_iter in range(iters):
             for i in range(population_size):
                 solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
                 # Calculate objective function for each particle
-                fitness, accuracy = self.objective_function(solution)
+                fitness = self.objective_function(solution)
                 fit[i] = fitness
 
                 if fitness > g_best_score:
                     g_best_score = fitness
                     g_best = solution
-                    best_acc = accuracy
 
             # Calculating Mass
             mass = mass_calculation(fit=fit)
@@ -175,7 +173,7 @@ class GSA:
                                                                        w_max=w_max,
                                                                        w_min=w_min)
 
-            history.loc[len(history)] = [current_iter, g_best_score, best_acc, time.time() - timer_start, g_best["discrete"], g_best['real']]
+            history.loc[len(history)] = [current_iter, g_best_score, time.time() - timer_start, g_best["discrete"], g_best['real']]
 
             # Calculate Acceleration
             acc = self._calculate_acceleration(population_size=population_size,
@@ -197,7 +195,6 @@ class GSA:
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
-            best_accuracy_history.append(best_acc)
 
             print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
 
@@ -206,7 +203,6 @@ class GSA:
         self.execution_time = timer_end - timer_start
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
-        self.accuracy_history = best_accuracy_history
 
         return history
 
@@ -398,9 +394,7 @@ class GSA:
         Returns:
             Mapping[str, np.ndarray]: Repaired solution.
         """
-        print("#"*100)
-        print("REPAIRING SOLUTION... ")
-        print("#"*100)
+        print("Repairing solution...")
 
         real_distances = {}
         discrete_distances = {}
@@ -434,15 +428,12 @@ class GSA:
                 X_discrete.append(round(float(a * R_discrete[i] + (1 - a) * S_discrete[i])))
 
             if patience == 0:
-                print("Patience is over. Returning the closest feasible solution.")
+                print("WARNING: Patience is over. Returning the closest feasible solution.")
                 return {"real": R_real, "discrete": R_discrete}
 
             S = {'real': np.array(X_real), 'discrete': np.array(X_discrete)}
             patience -= 1
 
-        print("#" * 100)
-        print("SOLUTION SUCCESSFULLY REPAIRED!!")
-        print("#" * 100)
         return S
 
     def set_seed(self, seed: int) -> None:
