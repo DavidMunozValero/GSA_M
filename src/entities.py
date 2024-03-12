@@ -28,16 +28,19 @@ class GSA:
                  d_dim: int,
                  boundaries: Mapping[str, List[Union[Any, Tuple[float, float]]]],
                  is_feasible: Union[callable, None] = None,
+                 initialization_policy: str = "default",
+                 save_accuracy: bool = False
                  ) -> None:
         """
         Initialize the GSA algorithm
 
         Args:
             objective_function (callable): Objective function to be minimized
-            is_feasible (callable): Function to check the feasibility of the solution
             r_dim (int): Number of dimensions of real variables
             d_dim (int): Number of dimensions of discrete variables
             boundaries (Mapping[str, Tuple[float, float]]): Dictionary with the lower and upper bounds for each variable
+            is_feasible (callable): Function to check the feasibility of the solution
+            initialization_policy (str): Policy to initialize the positions of the individuals in the population
         """
         self.objective_function = objective_function
         if is_feasible is None:
@@ -58,10 +61,12 @@ class GSA:
         self.start_time = None
         self.end_time = None
         self.execution_time = None
+        self.initialization_policy = initialization_policy
+        self.save_accuracy = save_accuracy
 
     def _get_initial_positions(self,
                                population_size: int
-                               ) -> Mapping[str, np.ndarray]:
+    ) -> Mapping[str, np.ndarray]:
         """
         Method to get the initial positions of the individuals in the population
 
@@ -73,31 +78,57 @@ class GSA:
         """
         print("Initializing positions of the individuals in the population...")
 
-        # Initialize random positions within boundaries for real-valued features
-        pos_r = np.array([np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
-                          for rd_lb, rd_ub in self.real_boundaries]).T
+        if self.initialization_policy == "default":
+            # Initialize random positions within boundaries for real-valued features
+            pos_r = np.array([np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
+                              for rd_lb, rd_ub in self.real_boundaries]).T
 
-        # Initialize random positions for discrete-valued features
-        pos_d = np.array([np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
-                          for dd_lb, dd_ub in self.discrete_boundaries]).T
+            # Initialize random positions for discrete-valued features
+            pos_d = np.array([np.random.choice(a=range(dd_lb, dd_ub + 1), size=population_size)
+                              for dd_lb, dd_ub in self.discrete_boundaries]).T
 
-        # Ensure solutions are feasible; regenerate if not
-        for sol in range(population_size):
-            solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
-            iters = 0
-            while not self.is_feasible(
-                    solution) and iters < 100:  # Adding a max iteration count to prevent infinite loops
-                if self.r_dim > 0:
-                    for col_index, (rd_lb, rd_ub) in enumerate(self.real_boundaries):
-                        pos_r[sol, col_index] = np.random.uniform(low=rd_lb, high=rd_ub)
-                if self.d_dim > 0:
-                    for col_index, (dd_lb, dd_ub) in enumerate(self.discrete_boundaries):
-                        pos_d[sol, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1))
+            # Ensure solutions are feasible; regenerate if not
+            for sol in range(population_size):
                 solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
-                iters += 1
+                iters = 0
+                while not self.is_feasible(
+                        solution) and iters < 100:  # Adding a max iteration count to prevent infinite loops
+                    if self.r_dim > 0:
+                        for col_index, (rd_lb, rd_ub) in enumerate(self.real_boundaries):
+                            pos_r[sol, col_index] = np.random.uniform(low=rd_lb, high=rd_ub)
+                    if self.d_dim > 0:
+                        for col_index, (dd_lb, dd_ub) in enumerate(self.discrete_boundaries):
+                            pos_d[sol, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1))
+                    solution = {'real': pos_r[sol, :], 'discrete': pos_d[sol, :]}
+                    iters += 1
 
+            print("Positions of the individuals in the population successfully initialized!")
+            return {'real': pos_r, 'discrete': pos_d}
+
+        if self.r_dim > 0:
+            real_population = []
+            while len(real_population) < population_size:
+                real_pos = np.array([np.random.uniform(low=rd_lb, high=rd_ub) for rd_lb, rd_ub in self.real_boundaries])
+                if not self.is_feasible({'real': real_pos, 'discrete': []}):
+                    continue
+                print("Initialized individuals: ", len(real_population) + 1)
+                real_population.append(real_pos)
+        else:
+            real_population = np.array([[] for _ in range(population_size)])
+
+        if self.d_dim > 0:
+            discrete_population =[]
+            while len(discrete_population) < population_size:
+                discrete_pos = np.array([np.random.randint(low=dd_lb, high=dd_ub) for dd_lb, dd_ub in self.discrete_boundaries])
+                if not self.is_feasible({'real': [], 'discrete': discrete_pos}):
+                    continue
+                discrete_population.append(discrete_pos)
+        else:
+            discrete_population = np.array([[] for _ in range(population_size)])
+
+        print({"real": real_population, "discrete": discrete_population})
         print("Positions of the individuals in the population successfully initialized!")
-        return {'real': pos_r, 'discrete': pos_d}
+        return {'real': np.array(real_population), 'discrete': np.array(discrete_population)}
 
     def optimize(self,
                  population_size: int,
@@ -145,20 +176,37 @@ class GSA:
         timer_start = time.time()
         self.start_time = time.strftime("%Y-%m-%d-%H-%M-%S")
 
-        history = pd.DataFrame(columns=['Iteration', 'Fitness', 'ExecutionTime', 'Discrete', 'Real'])
+        columns = ['Iteration', 'Fitness', 'ExecutionTime', 'Discrete', 'Real']
+        if self.save_accuracy:
+            columns.append('Accuracy')
+        history = pd.DataFrame(columns=columns)
 
         for current_iter in range(iters):
             for i in range(population_size):
                 solution = {'real': pos['real'][i, :], 'discrete': pos['discrete'][i, :]}
                 # Calculate objective function for each particle
-                fitness = self.objective_function(solution)
-                fit[i] = fitness
+                if self.save_accuracy:
+                    fitness, accuracy = self.objective_function(solution)
+                    fit[i] = fitness
+                else:
+                    fitness = self.objective_function(solution)
+                    fit[i] = fitness
 
                 if fitness > g_best_score:
-                    g_best_score = fitness
                     g_best = deepcopy(solution)
+                    if self.save_accuracy:
+                        g_best_score = fitness
+                        g_best = solution
+                        best_acc = accuracy
+                    else:
+                        g_best_score = fitness
+                        g_best = solution
 
-            history.loc[len(history)] = [current_iter, g_best_score, time.time() - timer_start, g_best["discrete"], g_best['real']]
+            history_row = [current_iter, g_best_score, time.time() - timer_start, g_best["discrete"], g_best['real']]
+            if self.save_accuracy:
+                history_row.append(best_acc)
+
+            history.loc[len(history)] = history_row
 
             # Calculating Mass
             mass = mass_calculation(fit=fit)
