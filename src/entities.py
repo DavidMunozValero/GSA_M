@@ -403,21 +403,34 @@ class GSA:
 
         real_distances = {}
         discrete_distances = {}
-        for i in range(len(population)):
-            if i != individual:
-                real_distances[i] = euclidean(solution['real'], population['real'][i])
-                discrete_distances[i] = hamming(solution['discrete'], population['discrete'][i])
 
-        sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
-        sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
+        if self.r_dim > 0:
+            population_real = population['real']
+            for i in range(len(population_real)):
+                if i != individual:
+                    real_distances[i] = euclidean(solution['real'], population_real[i])
+
+            sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
+            R_real = population['real'][sorted_real_distances[0][0]]
+        else:
+            R_real = []
+
+
+        if self.d_dim > 0:
+            population_discrete = population['discrete']
+            for i in range(len(population_discrete)):
+                if i != individual:
+                    discrete_distances[i] = hamming(solution['discrete'], population_discrete[i])
+
+            sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
+            R_discrete = population['discrete'][sorted_discrete_distances[0][0]]
+        else:
+            sorted_discrete_distances = []
+            R_discrete = []
 
         # Unfeasible individual
         S_real = solution['real']
         S_discrete = solution['discrete']
-
-        # Closest feasible individual
-        R_real = population['real'][sorted_real_distances[0][0]]
-        R_discrete = population['discrete'][sorted_discrete_distances[0][0]]
 
         S = {'real': S_real, 'discrete': S_discrete}
         patience = 1000
