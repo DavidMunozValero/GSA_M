@@ -139,7 +139,6 @@ def g_field(population_size: int,
     ds = sorted(range(len(mass)), key=lambda k: mass[k], reverse=True)
 
     acc = np.zeros((population_size, dim))
-    # force = Force.astype(int)
 
     for r in range(population_size):
         for ii in range(k_best):
