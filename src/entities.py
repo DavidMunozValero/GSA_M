@@ -398,7 +398,9 @@ class GSA:
         """
 
         if self.r_dim > 0:
-            l1_r = np.clip(solution.real, self.boundaries.real[:, 0], self.boundaries.real[:, 1])
+            l1_r = []
+            for i, val in enumerate(solution.real):
+                l1_r.append(np.clip(val, self.boundaries.real[i][0], self.boundaries.real[i][1]))
         else:
             l1_r = np.array([])
 
@@ -408,7 +410,7 @@ class GSA:
         else:
             l1_d = np.array([])
 
-        return Solution(real=l1_r, discrete=l1_d)
+        return Solution(real=np.array(l1_r, dtype=float), discrete=np.array(l1_d, dtype=float))
 
     def _move(self,
               position: List[Solution],
