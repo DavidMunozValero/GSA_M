@@ -74,9 +74,9 @@ def get_timetable(route: list) -> dict:
     departure_time = arrival_time
     for i, sta in enumerate(route):
         if i == 0 or i == len(route) - 1:
-            timetable[sta] = (arrival_time, arrival_time)
+            timetable[sta] = [arrival_time, arrival_time]
         else:
-            timetable[sta] = (arrival_time, departure_time)
+            timetable[sta] = [arrival_time, departure_time]
 
         arrival_time += np.random.randint(30, 120)
         departure_time = arrival_time + np.random.randint(2, 8)

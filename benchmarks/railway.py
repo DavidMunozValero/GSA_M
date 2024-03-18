@@ -31,12 +31,44 @@ class RevenueMaximization:
         self.max_stop_time = max_stop_time
 
         self.operational_times = self.get_operational_times()
-        self.updated_schedule = deepcopy(requested_schedule)
-        self.requested_times, self.real_boundaries = self.get_real_vars()
-        # self.real_boundaries = self.get_real_boundaries()
-        self.boundaries = Boundaries(real=self.real_boundaries, discrete=np.array([], dtype=float))
+        self._updated_schedule = deepcopy(requested_schedule)
+        self.requested_times = self.get_real_vars()
+        self._boundaries = self._calculate_boundaries()
         self.feasible_schedules = []
         self.scheduled_trains = np.zeros(len(self.requested_schedule))
+
+    def _calculate_boundaries(self):
+        boundaries = []
+
+        for service in self.requested_schedule:
+            stops = list(self.requested_schedule[service].keys())
+            ot_idx = 0
+            for i in range(len(stops) - 1):
+                if i == 0:
+                    lower_bound = self.requested_schedule[service][stops[i]][1] - self.safe_headway
+                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.safe_headway
+                else:
+                    travel_time = self.operational_times[service][ot_idx]
+                    stop_time = self.operational_times[service][ot_idx + 1]
+                    ot_idx += 2
+                    lower_bound = self.updated_schedule[service][stops[i - 1]][1] + travel_time + stop_time
+                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.safe_headway
+                boundaries.append([lower_bound, upper_bound])
+
+        return Boundaries(real=boundaries, discrete=[])
+
+    @property
+    def updated_schedule(self):
+        return self._updated_schedule
+
+    @updated_schedule.setter
+    def updated_schedule(self, value):
+        self._updated_schedule = value
+        self._boundaries = self._calculate_boundaries()
+
+    @property
+    def boundaries(self):
+        return self._boundaries
 
     def _departure_time_feasibility(self, scheduling) -> bool:
         """
@@ -52,7 +84,11 @@ class RevenueMaximization:
 
         # Get conflicts between services
         for i, service in enumerate(self.updated_schedule):
+            if S_i[i] == 0:
+                continue
             for j, service_k in enumerate(self.updated_schedule):
+                if i == j or S_i[j] == 0:
+                    continue
                 for stop in self.updated_schedule[service]:
                     if service_k == service or stop not in self.updated_schedule[service_k]:
                         continue
@@ -74,7 +110,7 @@ class RevenueMaximization:
             bool: True if the solution is within the boundaries, False otherwise
         """
         for i, rv in enumerate(solution.real):
-            if rv < self.real_boundaries[i][0] or rv > self.real_boundaries[i][1]:
+            if rv < self.boundaries.real[i][0] or rv > self.boundaries.real[i][1]:
                 return False
         return True
 
@@ -137,12 +173,12 @@ class RevenueMaximization:
             return True
         return False
 
-    def get_best_schedule(self, timetable):
+    def get_best_schedule(self, timetable: Solution):
         """
         Get best schedule
 
         Args:
-            solution (dict): solution
+            timetable (Solution): solution
 
         Returns:
             dict: best schedule
@@ -157,12 +193,12 @@ class RevenueMaximization:
                 best_schedule = fs
         return np.array(best_schedule)
 
-    def get_heuristic_schedule(self, timetable):
+    def get_heuristic_schedule(self, timetable: Solution):
         """
         Get best schedule
 
         Args:
-            solution (dict): solution
+            timetable (Solution): solution
 
         Returns:
             dict: best schedule
@@ -171,15 +207,18 @@ class RevenueMaximization:
         scheduled_trains = sorted(self.feasible_schedules, key=lambda x: np.sum(x), reverse=True)
         return scheduled_trains[0]
 
-    def get_fitness_gsa(self, timetable, heuristic_schedule: bool = True):
+    def get_fitness_gsa(self,
+                        timetable: Solution,
+                        heuristic_schedule: bool = True):
         """
         Get fitness
 
         Args:
-            solution (dict): solution
+            timetable (Solution): solution
+            heuristic_schedule (bool): heuristic schedule
 
         Returns:
-            float: fitness
+            Tuple[float, int]: fitness and number of evaluations
         """
         if not heuristic_schedule:
             schedule = self.get_best_schedule(timetable)
@@ -199,7 +238,7 @@ class RevenueMaximization:
         population = []
         for _ in range(population_size):
             proposed_times = deepcopy(self.requested_times)
-            updated_boundaries = deepcopy(self.real_boundaries)
+            updated_boundaries = deepcopy(self.boundaries.real)
             for j in range(len(self.requested_times)):
                 lower_bound, upper_bound = updated_boundaries[j]
                 proposed_times[j] = np.round(np.random.uniform(lower_bound, upper_bound), 2)
@@ -238,48 +277,21 @@ class RevenueMaximization:
 
         return operational_times
 
-    def get_real_boundaries(self):
-        """
-        Get real boundaries
-
-        Returns:
-            list: real boundaries
-        """
-        real_vars = self.get_real_vars()
-        real_boundaries = []
-        for rv in real_vars:
-            real_boundaries.append((rv - 10, rv + 10))
-
-        return np.array(real_boundaries, dtype=float)
-
-    def get_real_vars(self) -> Tuple[List[float], List[Tuple[float, float]]]:
+    def get_real_vars(self) -> List[float]:
         """
         Get real variables
 
         Returns:
-            Tuple[List[float], List[Tuple[float, float]]]: real variables and boundaries
+            Tuple[List[float], List[List[float]]]: real variables and boundaries
         """
         real_vars = []
-        boundaries = []
 
         for service in self.requested_schedule:
             stops = list(self.requested_schedule[service].keys())
-            ot_idx = 0
             for i in range(len(stops)-1):
                 real_vars.append(self.requested_schedule[service][stops[i]][1])
-                if i == 0:
-                    lower_bound = self.requested_schedule[service][stops[i]][1] - self.safe_headway
-                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.safe_headway
-                else:
-                    travel_time = self.operational_times[service][ot_idx]
-                    stop_time = self.operational_times[service][ot_idx+1]
-                    ot_idx += 2
-                    lower_bound = self.updated_schedule[service][stops[i-1]][1] + travel_time + stop_time
-                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.safe_headway
-                boundaries.append((lower_bound, upper_bound))
 
-
-        return real_vars, boundaries
+        return real_vars
 
     def get_revenue(self,
                     solution: Solution,
@@ -288,7 +300,8 @@ class RevenueMaximization:
         Get IM revenue.
 
         Args:
-            solution (dict): solution
+            solution (Solution): solution
+            update_schedule (bool): update schedule
 
         Returns:
             float: IM revenue
@@ -328,6 +341,7 @@ class RevenueMaximization:
         Args:
             timetable (Solution): solution obtained from the optimization algorithm
             scheduling (np.array): scheduling
+            update_schedule (bool): update schedule
 
         Returns:
             bool: True if the solution is feasible, False otherwise
@@ -377,8 +391,7 @@ class RevenueMaximization:
 
         train_combinations = truth_table(len(self.requested_schedule))
         self.feasible_schedules = list(
-            filter(lambda schdl: self.is_feasible(timetable, np.array(schdl), update_schedule=False),
-                   train_combinations))
+            filter(lambda S_i: self._departure_time_feasibility(S_i), train_combinations))
 
     def update_schedule(self, solution: Solution):
         """
@@ -406,4 +419,7 @@ class RevenueMaximization:
                     ot_idx += 2
                     dt_idx += 1
 
-                self.updated_schedule[service][stop] = (arrival_time, departure_time)
+                self.updated_schedule[service][stop][0] = arrival_time
+                self.updated_schedule[service][stop][1] = departure_time
+
+        self._boundaries = self._calculate_boundaries()
