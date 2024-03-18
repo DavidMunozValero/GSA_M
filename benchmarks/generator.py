@@ -1,8 +1,8 @@
 """Generator of railway service requests."""
 
 import numpy as np
-from scipy.stats import loguniform
 
+from scipy.stats import loguniform
 from typing import List, Mapping, Union
 
 
@@ -10,14 +10,14 @@ def get_lines(corridor: Mapping[str, Mapping],
               path: Union[List, None] = None
               ) -> List[List[str]]:
     """
-    Get all the lines in the corridor
+    Get all the lines in the corridor.
 
     Args:
-        corridor (dict): dictionary with the corridor structure
-        path (list, optional): list of nodes
+        corridor (Mapping[str, Mapping]): corridor structure.
+        path (Union[List, None]): path.
 
     Returns:
-        list of lines
+        List[List[str]]: list of lines
     """
     if path is None:
         path = []
@@ -33,41 +33,41 @@ def get_lines(corridor: Mapping[str, Mapping],
     return lines
 
 
-def sample_line(lines: list) -> list:
+def sample_line(lines: List[List[str]]) -> List[str]:
     """
-    Sample a random line from the list of lines
+    Sample a random line from the list of lines.
 
     Args:
-        lines (list): list of lines
+        lines (List[List[str]]): list of lines.
 
     Returns:
-        list: random line
+        List[str]: random line.
     """
     return lines[np.random.randint(len(lines))]
 
 
-def sample_route(line: list) -> list:
+def sample_route(line: List[str]) -> List[str]:
     """
-    Sample a random route from line
+    Sample a random route from line.
 
     Args:
-        line (list): list of stations
+        line (List[str]): line.
 
     Returns:
-        list: random route
+        List[str]: random route.
     """
     return line[np.random.randint(0, len(line) - 1):]
 
 
-def get_timetable(route: list) -> dict:
+def get_timetable(route: List[str]) -> Mapping[str, List[float]]:
     """
-    Generate random timetable for route r
+    Generate random timetable for given route.
 
     Args:
-        route (list): list of stations
+        route (List[str]): route.
 
     Returns:
-        dict: timetable
+        Mapping[str, List[float]]: timetable.
     """
     timetable = {}
     arrival_time = np.random.randint(0, 24 * 60)
@@ -86,30 +86,34 @@ def get_timetable(route: list) -> dict:
 
 def get_schedule_request(corridor: Mapping[str, Mapping],
                          n_services: int = 1
-                         ) -> Mapping[int, Mapping]:
+                         ) -> Mapping[int, Mapping[str, List[float]]]:
     """
-    Generate random timetable
+    Generate random timetable.
 
     Args:
         corridor (Mapping[str, Mapping]): corridor structure.
-        n_services (int): number of services
+        n_services (int): number of services.
 
     Returns:
-        Mapping[int, Mapping]: timetable
+        Mapping[int, Mapping[str, List[float]]]: schedule request.
     """
     lines = get_lines(corridor)
-    return {i: get_timetable(sample_route(sample_line(lines))) for i in range(1, n_services + 1)}
+    schedule_request = {}
+    for i in range(1, n_services + 1):
+        schedule_request[i] = get_timetable(sample_route(sample_line(lines)))
+    return schedule_request
 
 
-def get_revenue_behaviour(schedule: dict) -> dict:
+def get_revenue_behaviour(schedule: Mapping[int, Mapping[str, List[float]]]
+                          ) -> Mapping[int, Mapping[str, float]]:
     """
     Get revenue behaviour
 
     Args:
-        schedule (dict): schedule
+        schedule (Mapping[int, Mapping[str, List[float]]]): schedule.
 
     Returns:
-        dict: revenue behaviour
+        Mapping[int, Mapping[str, float]]: revenue behaviour.
     """
     revenue = {}
     bias = [0.2, 0.35, 0.1]
