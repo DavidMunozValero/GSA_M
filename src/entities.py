@@ -114,6 +114,7 @@ class GSA:
                  d_dim: int,
                  boundaries: Boundaries,
                  is_feasible: Union[callable, None] = None,
+                 custom_repair: Union[None, callable] = None
                  ) -> None:
         """
         Initialize the GSA algorithm
@@ -129,6 +130,7 @@ class GSA:
         if is_feasible is None:
             self.is_feasible = lambda _: True
         self.is_feasible = is_feasible
+        self.custom_repair = custom_repair
         self.r_dim = r_dim
         self.d_dim = d_dim
         self.t_dim = self.r_dim + self.d_dim
@@ -461,84 +463,16 @@ class GSA:
             new_solution = Solution(position[i].real, discrete=position[i].discrete)
 
             if not self.is_feasible(new_solution):
-                if not repair_solution:
-                    new_solution = self._clip_positions(solution=new_solution)
+                if repair_solution:
+                    new_solution = self.custom_repair(new_solution)
                 else:
-                    new_solution = self._repair_solution(solution=new_solution,
-                                                         individual=i,
-                                                         population=position)
+                    new_solution = self._clip_positions(solution=new_solution)
 
             position[i] = new_solution
 
         return position, velocity
 
-    def _repair_solution(self,
-                         solution: Solution,
-                         individual: int,
-                         population: List[Solution]
-                         ) -> Solution:
-        """
-        Repair the solution to make it feasible
-
-        Args:
-            solution (Solution): Solution to be repaired.
-
-        Returns:
-            Solution: Repaired solution.
-        """
-        print("Repairing solution...")
-
-        real_distances = {}
-        discrete_distances = {}
-
-        if self.r_dim > 0:
-            for i in range(len(population)):
-                if i != individual:
-                    real_distances[i] = euclidean(solution.real, population[i].real)
-
-            sorted_real_distances = sorted(real_distances.items(), key=lambda x: x[1])
-            R_real = population[sorted_real_distances[0][0]].real
-        else:
-            R_real = []
-
-
-        if self.d_dim > 0:
-            for i in range(len(population)):
-                if i != individual:
-                    discrete_distances[i] = hamming(solution.discrete, population[i].discrete[i])
-
-            sorted_discrete_distances = sorted(discrete_distances.items(), key=lambda x: x[1])
-            R_discrete = population[sorted_discrete_distances[0][0]].discrete
-        else:
-            sorted_discrete_distances = []
-            R_discrete = []
-
-        # Unfeasible individual
-        S_real = solution.real
-        S_discrete = solution.discrete
-
-        S = Solution(real=S_real, discrete=S_discrete)
-        patience = 1000
-        while not self.is_feasible(S):
-            X_real = []
-            for i in range(len(S_real)):
-                a = np.random.uniform(low=0, high=1)
-                X_real.append(a * R_real[i] + (1 - a) * S_real[i])
-
-            X_discrete = []
-            for i in range(len(S_discrete)):
-                a = np.random.uniform(low=0, high=1)
-                X_discrete.append(round(float(a * R_discrete[i] + (1 - a) * S_discrete[i])))
-
-            if patience == 0:
-                print("WARNING: Patience is over. Returning the closest feasible solution.")
-                return Solution(real=R_real, discrete=R_discrete)
-
-            S = Solution(real=np.array(X_real), discrete=np.array(X_discrete))
-            patience -= 1
-
-        return S
-
+    @staticmethod
     def set_seed(self, seed: int) -> None:
         """
         Set seed for the random number generator.
