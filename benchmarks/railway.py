@@ -212,7 +212,7 @@ class RevenueMaximization:
                 best_schedule = fs
         return np.array(best_schedule)
 
-    def get_heuristic_schedule(self, timetable: Solution, strategy: int = 5):
+    def get_heuristic_schedule(self, timetable: Solution, strategy: int = 4):
         """
         Get best schedule
 
@@ -276,12 +276,34 @@ class RevenueMaximization:
         if strategy == 4:
             """
             CaSP: Conflict-avoiding Sequential Planner
-            1) Sequentially iter through conflict matrices
-            2) If matrix has no conflicts (i.e. no 1s), then schedule the service
-            3) If matrix has conflicts, then take into account service id's that can't be scheduled at the same time
-            4) Evaluate best possible schedule
+            1) Schedule services without conflicts by checking the conflict matrices.
+            2) Get dictionary of services with conflicts and their revenue based on the updated schedule
+            3) While there are services with conflicts:
+                3.1) Get service with best revenue, and schedule it
+                3.2) Get set of services that have conflict with service 's'
+                3.3) Update conflicts dictionary by removing services that have conflict with service 's' 
+                     (including 's')
             """
-            pass
+            self.update_schedule(timetable)
+            default_planner = np.array([(~cm).all() for cm in self.conflict_matrices], dtype=np.bool_)
+            conflicts = set(sch for sch in self.updated_schedule if not default_planner[sch - 1])
+            conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
+            conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
+
+            while conflicts_revenue:
+                # Get service with best revenue
+                s, _ = conflicts_revenue.popitem()
+                default_planner[s - 1] = True
+
+                # Get set of services that have conflict with service 's'
+                rows_with_true = np.any(self.conflict_matrices[s - 1], axis=1)
+                row_indices = np.where(rows_with_true)[0] + 1
+                row_indices = set(row_indices.flatten())
+
+                # Update conflicts set
+                conf_revenue = dict(filter(lambda p: p[0] not in row_indices, conflicts_revenue.items()))
+
+            return default_planner
 
         if strategy == 5:
             """
@@ -402,6 +424,23 @@ class RevenueMaximization:
 
         return real_vars
 
+    def get_service_revenue(self, service):
+        k = self.revenue[service]['k']
+        departure_station = list(self.requested_schedule[service].keys())[0]
+        departure_time_delta = abs(self.updated_schedule[service][departure_station][1] -
+                                   self.requested_schedule[service][departure_station][1])
+        tt_penalties = []
+        for j, stop in enumerate(self.requested_schedule[service].keys()):
+            if j == 0 or j == len(self.requested_schedule[service]) - 1:
+                continue
+            tt_penalty = self.penalty_function(abs(
+                self.updated_schedule[service][stop][1] - self.requested_schedule[service][stop][
+                    1]) / self.safe_headway, k)
+            tt_penalties.append(tt_penalty * self.revenue[service]['tt_max_penalty'])
+        dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service][
+            'dt_max_penalty']
+        return self.revenue[service]['canon'] - dt_penalty - np.sum(tt_penalties)
+
     def get_revenue(self,
                     solution: Solution,
                     update_schedule: bool = True) -> int:
@@ -421,21 +460,8 @@ class RevenueMaximization:
 
         im_revenue = 0
         for i, service in enumerate(self.requested_schedule):
-            k = self.revenue[service]['k']
-            departure_station = list(self.requested_schedule[service].keys())[0]
-            departure_time_delta = abs(self.updated_schedule[service][departure_station][1] -
-                                       self.requested_schedule[service][departure_station][1])
-            tt_penalties = []
-            for j, stop in enumerate(self.requested_schedule[service].keys()):
-                if i == 0 or i == len(self.requested_schedule[service]) - 1:
-                    continue
-                tt_penalty = self.penalty_function(abs(
-                    self.updated_schedule[service][stop][1] - self.requested_schedule[service][stop][
-                        1]) / self.safe_headway, k)
-                tt_penalties.append(tt_penalty * self.revenue[service]['tt_max_penalty'])
-            dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service][
-                'dt_max_penalty']
-            im_revenue += self.revenue[service]['canon'] * S_i[i] - dt_penalty * S_i[i] - np.sum(tt_penalties) * S_i[i]
+            if S_i[i]:
+                im_revenue += self.get_service_revenue(service)
 
         if im_revenue > self.best_revenue:
             self.best_revenue = im_revenue
