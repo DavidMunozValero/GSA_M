@@ -6,7 +6,7 @@ from itertools import combinations
 from math import e, cos, pi
 from typing import Mapping, Tuple, Union, List
 
-from src.entities import Solution, Boundaries
+from src.entities import GSA, Solution, Boundaries
 
 
 class RevenueMaximization:
@@ -212,7 +212,7 @@ class RevenueMaximization:
                 best_schedule = fs
         return np.array(best_schedule)
 
-    def get_heuristic_schedule(self, timetable: Solution, strategy: int = 3):
+    def get_heuristic_schedule(self, timetable: Solution, strategy: int = 5):
         """
         Get best schedule
 
@@ -272,6 +272,47 @@ class RevenueMaximization:
                 return np.zeros(self.n_services, dtype=np.bool_)
             else:
                 return best_row_found
+
+        if strategy == 4:
+            """
+            CaSP: Conflict-avoiding Sequential Planner
+            1) Sequentially iter through conflict matrices
+            2) If matrix has no conflicts (i.e. no 1s), then schedule the service
+            3) If matrix has conflicts, then take into account service id's that can't be scheduled at the same time
+            4) Evaluate best possible schedule
+            """
+            pass
+
+        if strategy == 5:
+            """
+            Use GSA to maximize number of scheduled trains for given timetable
+            """
+            def gsa_feasibility(solution):
+                S_i = solution.discrete
+                print("Test: ", S_i)
+                return self._departure_time_feasibility(S_i)
+
+            def get_num_trains(solution):
+                n_trains = np.sum(solution.discrete)
+                return n_trains, 0
+
+            self.update_schedule(timetable)
+            boundaries = Boundaries(real=[], discrete=[(0, 1) for _ in range(self.n_services)])
+
+            gsa_algo = GSA(objective_function=get_num_trains,
+                           r_dim=0,
+                           d_dim=self.n_services,
+                           boundaries=boundaries,
+                           is_feasible=gsa_feasibility)
+
+            gsa_algo.set_seed(seed=28)
+
+            training_history = gsa_algo.optimize(population_size=5,
+                                                 iters=10,
+                                                 chaotic_constant=False,
+                                                 repair_solution=False)
+
+            return training_history.iloc[-1]['Discrete']
 
         return np.zeros(self.n_services, dtype=np.bool_)
 

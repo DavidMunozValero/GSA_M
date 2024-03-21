@@ -160,6 +160,7 @@ class GSA:
         print("Initializing positions of the individuals in the population...")
 
         # Initialize random positions within boundaries for real-valued features
+
         pos_r = np.array([np.random.uniform(low=rd_lb, high=rd_ub, size=population_size)
                           for rd_lb, rd_ub in self.boundaries.real]).T
 
@@ -170,17 +171,19 @@ class GSA:
         population = []
         # Ensure solutions are feasible; regenerate if not
         for sol in range(population_size):
-            solution = Solution(real=pos_r[sol, :], discrete=pos_d[sol, :])
+            real_part = pos_r[sol, :] if self.r_dim > 0 else None
+            discrete_part = pos_d[sol, :] if self.d_dim > 0 else None
+            solution = Solution(real=real_part, discrete=discrete_part)
             iters = 0
             while not self.is_feasible(
                     solution) and iters < 100:  # Adding a max iteration count to prevent infinite loops
                 if self.r_dim > 0:
                     for col_index, (rd_lb, rd_ub) in enumerate(self.boundaries.real):
-                        pos_r[sol, col_index] = np.random.uniform(low=rd_lb, high=rd_ub)
+                        real_part = np.random.uniform(low=rd_lb, high=rd_ub)
                 if self.d_dim > 0:
                     for col_index, (dd_lb, dd_ub) in enumerate(self.boundaries.discrete):
-                        pos_d[sol, col_index] = np.random.choice(a=range(dd_lb, dd_ub + 1))
-                solution = Solution(real=pos_r[sol, :], discrete=pos_d[sol, :])
+                        discrete_part = np.random.choice(a=range(dd_lb, dd_ub + 1))
+                solution = Solution(real=real_part, discrete=discrete_part)
                 iters += 1
             population.append(solution)
 
@@ -230,6 +233,8 @@ class GSA:
             pos = initial_population
 
         print(f"Initial population: {pos}")
+        for ind in pos:
+            print(ind.real, ind.discrete)
 
         best_solution_history = []
         convergence_curve = np.zeros(iters)
@@ -369,7 +374,7 @@ class GSA:
 
         acc_d = g_field(population_size=population_size,
                         dim=self.d_dim,
-                        pos=np.array([p.discrete for p in pos], dtype=float),
+                        pos=np.array([p.discrete for p in pos], dtype=np.bool_),
                         mass=mass,
                         current_iter=current_iter,
                         max_iters=max_iters,
@@ -473,7 +478,7 @@ class GSA:
         return position, velocity
 
     @staticmethod
-    def set_seed(self, seed: int) -> None:
+    def set_seed(seed: int) -> None:
         """
         Set seed for the random number generator.
 
