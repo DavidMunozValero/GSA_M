@@ -296,6 +296,11 @@ class GSA:
 
             print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
 
+            for i, individual in enumerate(pos):
+                if not self.is_feasible(individual):
+                    print(f"Individual {i} is not feasible")
+                    print(individual.real, individual.discrete)
+
         timer_end = time.time()
         self.end_time = time.strftime("%Y-%m-%d-%H-%M-%S")
         self.execution_time = timer_end - timer_start
@@ -447,7 +452,7 @@ class GSA:
             if self.r_dim > 0:
                 r1 = np.random.random(position[i].real.shape)  # Generate random coefficients for velocity update
                 velocity[i].real = velocity[i].real * r1 + acceleration[i].real
-                position[i].real = position[i].real + velocity[i].real  # Update position
+                position[i].real = np.round(position[i].real + velocity[i].real)  # Update position
 
             # Update discrete variables (if any)
             if self.d_dim > 0:
