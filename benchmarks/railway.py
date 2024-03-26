@@ -1,3 +1,5 @@
+"""Infrastructure Manager Revenue maximization problem formulation."""
+
 import numpy as np
 
 from copy import deepcopy
@@ -11,9 +13,8 @@ from src.entities import GSA, Solution, Boundaries
 
 class RevenueMaximization:
     """
-    Class for the revenue maximization problem.
+    Class for the IM revenue maximization problem.
     """
-
     def __init__(self,
                  requested_schedule: Mapping[int, Mapping[str, List[int]]],
                  revenue: Mapping[int, Mapping[str, Union[float, int]]],
@@ -36,18 +37,42 @@ class RevenueMaximization:
 
         self.n_services = len(self.requested_schedule)
         self.operational_times = self.get_operational_times()
-        self._updated_schedule = deepcopy(requested_schedule)
-        self._boundaries = self._calculate_boundaries()
-        self._conflict_matrices = self._get_conflict_matrices()
+        self.updated_schedule = deepcopy(requested_schedule)
+        self.boundaries = self._calculate_boundaries()
+        self.conflict_matrices = self._get_conflict_matrices()
         self.best_revenue = -np.inf
         self.best_solution = None
         self.feasible_schedules = []
+        self.dt_indexer = self.get_departure_time_indexer()
         self.indexer = {sch: idx for idx, sch in enumerate(self.requested_schedule)}
         self.rev_indexer = {idx: sch for idx, sch in enumerate(self.requested_schedule)}
         self.requested_times = self.get_real_vars()
         self.scheduled_trains = np.zeros(self.n_services, dtype=np.bool_)
 
-    def _calculate_boundaries(self):
+    def get_departure_time_indexer(self) -> Mapping[int, int]:
+        """
+        Build dictionary where keys are the index of the departure times and values are the service where the departure
+        time belongs to.
+
+        Returns:
+            Mapping[int, int]: departure time indexer.
+        """
+        i = 0
+        dt_indexer = {}
+        for service in self.requested_schedule:
+            for _ in range(len(self.requested_schedule[service]) - 1):
+                dt_indexer[i] = service
+                i += 1
+
+        return dt_indexer
+
+    def _calculate_boundaries(self) -> Boundaries:
+        """
+        Calculate boundaries for the departure times of the services.
+
+        Returns:
+            Boundaries: boundaries.
+        """
         boundaries = []
 
         for service in self.requested_schedule:
@@ -69,24 +94,6 @@ class RevenueMaximization:
 
         return Boundaries(real=boundaries, discrete=[])
 
-    @property
-    def updated_schedule(self):
-        return self._updated_schedule
-
-    @property
-    def conflict_matrices(self):
-        return self._conflict_matrices
-
-    @updated_schedule.setter
-    def updated_schedule(self, value):
-        self._updated_schedule = value
-        self._boundaries = self._calculate_boundaries()
-        self._conflict_matrices = self._get_conflict_matrices()
-
-    @property
-    def boundaries(self):
-        return self._boundaries
-
     def _departure_time_feasibility(self, S_i: np.array) -> bool:
         """
         Check if there are any conflicts with the departure times.
@@ -99,10 +106,7 @@ class RevenueMaximization:
         """
         S_i = np.array(S_i, dtype=np.bool_)
         if not S_i.dot(np.array([np.sum(S_i.dot(service_sec_arr)) for service_sec_arr in self.conflict_matrices])):
-            # print("Departure time is feasible")
             return True
-
-        # print("Departure time is NOT feasible")
         return False
 
     def _feasible_boundaries(self, solution: Solution) -> bool:
@@ -117,18 +121,21 @@ class RevenueMaximization:
         """
         for i, rv in enumerate(solution.real):
             if rv < self.boundaries.real[i][0] or rv > self.boundaries.real[i][1]:
-                # print(f"Boundaries are NOT feasible. Real variable {i} is out of bounds")
-                # print(f"Boundaries: {self.boundaries.real[i]} - Real variable: {rv}")
                 return False
-        # print("Boundaries are feasible")
         return True
 
-    def _get_conflict_matrices(self):
+    def _get_conflict_matrices(self) -> np.array:
+        """
+        Get conflict matrices for the services.
+
+        Returns:
+            np.array: conflict matrices.
+        """
         conflict_matrices = np.empty(self.n_services, dtype=object)
 
         for c_id, service in enumerate(self.updated_schedule):
             stops = list(self.updated_schedule[service].keys())
-            service_sec_arr = np.zeros((self.n_services, len(stops)), dtype=np.bool_)
+            service_sec_arr = np.zeros(shape=(self.n_services, len(stops)), dtype=np.bool_)
             for i, service_k in enumerate(self.updated_schedule):
                 stops_k = list(self.updated_schedule[service_k].keys())
                 if service == service_k or not set(stops).intersection(set(stops_k)):
@@ -145,34 +152,7 @@ class RevenueMaximization:
 
         return conflict_matrices
 
-    def _stop_times_feasibility(self, scheduling: np.array):
-        """
-        Check if the travel times are feasible. In order to be feasible, the travel times must be greater than the
-        requested ones.
-
-        Args:
-            scheduling (np.array): solution
-
-        Returns:
-            bool: True if the travel times are feasible, False otherwise
-        """
-        S_i = scheduling
-        for i, service in enumerate(self.requested_schedule):
-            if S_i[i] == 0:
-                continue
-            original_service_times = tuple(self.requested_schedule[service].values())
-            updated_service_times = tuple(self.updated_schedule[service].values())
-            for j in range(1, len(original_service_times) - 1):
-                original_st = original_service_times[j][1] - original_service_times[j][0]
-                updated_st = updated_service_times[j][1] - updated_service_times[j][0]
-                if updated_st < original_st:
-                    # print(f"Stop time is NOT feasible for service {service}")
-                    return False
-
-        # print("Stop time is feasible")
-        return True
-
-    def _travel_times_feasibility(self, scheduling) -> bool:
+    def _travel_times_feasibility(self, S_i: np.array) -> bool:
         """
         Check if the travel times are feasible. In order to be feasible, the travel times must be greater than the
         requested ones.
@@ -180,51 +160,54 @@ class RevenueMaximization:
         Returns:
             bool: True if the travel times are feasible, False otherwise
         """
-        S_i = scheduling
         for i, service in enumerate(self.requested_schedule):
             if S_i[i] == 0:
                 continue
             original_service_times = tuple(self.requested_schedule[service].values())
             updated_service_times = tuple(self.updated_schedule[service].values())
             for j in range(len(original_service_times) - 1):
+                # Travel time feasibility
                 original_tt = original_service_times[j + 1][0] - original_service_times[j][1]
                 updated_tt = updated_service_times[j + 1][0] - updated_service_times[j][1]
                 if updated_tt < original_tt:
-                    # print(f"Travel time is NOT feasible for service {service}")
-                    # print(f"Original travel time: {original_tt} - Updated travel time: {updated_tt}")
                     return False
-
-        # print("Travel time is feasible")
+                if j == 0:
+                    continue
+                # Stop time feasibility
+                original_st = original_service_times[j][1] - original_service_times[j][0]
+                updated_st = updated_service_times[j][1] - updated_service_times[j][0]
+                if updated_st < original_st:
+                    return False
         return True
 
     def feasible_services_times(self, timetable: Solution):
         """
-        Check if the service is feasible
+        Check if the service is feasible.
 
         Args:
-            timetable (Solution): solution
+            timetable (Solution): solution obtained from the optimization algorithm (timetable).
 
         Returns:
-            bool: True if the service is feasible, False otherwise
+            bool: True if the service is feasible, False otherwise.
         """
         self.update_schedule(timetable)
         if not self._feasible_boundaries(timetable):
             return False
 
         scheduling = np.ones(len(self.requested_schedule))
-        if self._travel_times_feasibility(scheduling) and self._stop_times_feasibility(scheduling):
+        if self._travel_times_feasibility(scheduling):
             return True
         return False
 
-    def get_best_schedule(self, timetable: Solution):
+    def get_best_schedule(self, timetable: Solution) -> np.array:
         """
-        Get best schedule
+        Get the best feasible train scheduling based on revenue maximization.
 
         Args:
-            timetable (Solution): solution
+            timetable (Solution): solution obtained from the optimization algorithm (timetable).
 
         Returns:
-            dict: best schedule
+            np.array: best feasible train scheduling.
         """
         self.update_feasible_schedules(timetable)
         best_schedule = None
@@ -264,39 +247,34 @@ class RevenueMaximization:
                     return planned_services
 
         if strategy == 3:
+            # TODO: Not working properly
             # Return feasible schedule with the highest number of scheduled services using a bisection algorithm
             target = self.n_services // 2
             upper_bound = self.n_services
             lower_bound = 0
-            best_row_found = np.empty(0, dtype=np.bool_)
+            best_row_found = np.zeros(self.n_services, dtype=np.bool_)
 
             i = 1
             explored = set()
             while target not in explored:
-                # print(f"Bisecction step: {i} - Target: {target}")
                 for true_positions in combinations(range(self.n_services), target):
                     row = np.zeros(self.n_services, dtype=np.bool_)
                     row[list(true_positions)] = True
-                    # print(row)
                     if self.is_feasible(timetable, row):
                         if not any(t > target for t in explored):
                             best_row_found = row
+                        # Upper bounds
                         lower_bound = target
                         target = (upper_bound + lower_bound) // 2 if lower_bound < upper_bound - 1 else upper_bound
-                        # print(f"Lower bound: {lower_bound} - Upper bound: {upper_bound} - Target: {target}")
                         break
                 else:
+                    # Exhausted all combinations in iteration. Reducing target
                     upper_bound = target
                     target = (upper_bound + lower_bound) // 2
-                    # print(f"Exhausted all combinations in iteration. Reducing target. New target: {target}")
                 explored.add(target)
                 i += 1
 
-            if not best_row_found.any():
-                # print("No feasible solution found")
-                return np.zeros(self.n_services, dtype=np.bool_)
-            else:
-                return best_row_found
+            return best_row_found
 
         if strategy == 4:
             """
@@ -324,7 +302,6 @@ class RevenueMaximization:
                 rows_with_true = np.any(self.conflict_matrices[self.indexer[s]], axis=1)
                 conflicts_with_s = np.where(rows_with_true)[0]
                 conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
-                # conflicts_with_s = set(conflicts_with_s.flatten())
 
                 # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
                 conflicts_revenue = dict(filter(lambda p: p[0] not in conflicts_with_s, conflicts_revenue.items()))
@@ -332,9 +309,8 @@ class RevenueMaximization:
             return default_planner
 
         if strategy == 5:
-            """
-            Use GSA to maximize number of scheduled trains for given timetable
-            """
+            # TODO: Not working properly
+            # Use GSA to maximize number of scheduled trains for a given timetable
             def gsa_feasibility(solution):
                 S_i = solution.discrete
                 print("Test: ", S_i)
@@ -375,13 +351,28 @@ class RevenueMaximization:
             heuristic_schedule (bool): heuristic schedule
 
         Returns:
-            Tuple[float, int]: fitness and number of evaluations
+            Tuple[float, int]: fitness and accuracy (0)
         """
         if not heuristic_schedule:
             schedule = self.get_best_schedule(timetable)
         else:
             schedule = self.get_heuristic_schedule(timetable)
         return self.get_revenue(Solution(real=timetable.real, discrete=schedule), update_schedule=False), 0
+
+    def _update_dynamic_bounds(self, j, ot_idx, proposed_times, updated_boundaries):
+        if j != len(self.requested_times) - 1 and self.dt_indexer[j + 1] == self.dt_indexer[j]:
+            travel_time = self.operational_times[self.dt_indexer[j]][ot_idx]
+            stop_time = self.operational_times[self.dt_indexer[j]][ot_idx + 1]
+            ot_idx += 2
+            lower_bound = proposed_times[j] + travel_time + stop_time
+            max_dt_original = self.requested_times[j + 1] + self.safe_headway
+            max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
+            upper_bound = min(max_dt_original, max_dt_updated)
+            updated_boundaries[j + 1] = (lower_bound, upper_bound)
+        else:
+            ot_idx = 0
+
+        return ot_idx, updated_boundaries
 
     def get_initial_population(self, population_size: int) -> List[Solution]:
         """
@@ -390,9 +381,6 @@ class RevenueMaximization:
         Returns:
             dict: initial population
         """
-        identify_services = [service for service in self.requested_schedule for _ in
-                             range(len(self.requested_schedule[service])-1)]
-
         population = []
         ot_idx = 0
         for _ in range(population_size):
@@ -401,17 +389,7 @@ class RevenueMaximization:
             for j in range(len(self.requested_times)):
                 lower_bound, upper_bound = updated_boundaries[j]
                 proposed_times[j] = int(np.random.uniform(lower_bound, upper_bound))
-                if j != len(self.requested_times) - 1 and identify_services[j + 1] == identify_services[j]:
-                    travel_time = self.operational_times[identify_services[j]][ot_idx]
-                    stop_time = self.operational_times[identify_services[j]][ot_idx + 1]
-                    ot_idx += 2
-                    lower_bound = proposed_times[j] + travel_time + stop_time
-                    max_dt_original = self.requested_times[j+1] + self.safe_headway
-                    max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
-                    upper_bound = min(max_dt_original, max_dt_updated)
-                    updated_boundaries[j + 1] = (lower_bound, upper_bound)
-                else:
-                    ot_idx = 0
+                ot_idx, updated_boundaries = self._update_dynamic_bounds(j, ot_idx, proposed_times, updated_boundaries)
 
             population.append(Solution(real=np.array(proposed_times, dtype=int), discrete=np.array([])))
 
@@ -473,8 +451,7 @@ class RevenueMaximization:
                 self.updated_schedule[service][stop][1] - self.requested_schedule[service][stop][
                     1]) / self.safe_headway, k)
             tt_penalties.append(tt_penalty * self.revenue[service]['tt_max_penalty'])
-        dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service][
-            'dt_max_penalty']
+        dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service]['dt_max_penalty']
         return self.revenue[service]['canon'] - dt_penalty - np.sum(tt_penalties)
 
     def get_revenue(self,
@@ -532,8 +509,7 @@ class RevenueMaximization:
 
         dt_feasible = self._departure_time_feasibility(scheduling)
         tt_feasible = self._travel_times_feasibility(scheduling)
-        st_feasible = self._stop_times_feasibility(scheduling)
-        if all([dt_feasible, tt_feasible, st_feasible]):
+        if dt_feasible and tt_feasible:
             return True
         return False
 
@@ -598,8 +574,8 @@ class RevenueMaximization:
                 self.updated_schedule[service][stop][0] = arrival_time
                 self.updated_schedule[service][stop][1] = departure_time
 
-        self._boundaries = self._calculate_boundaries()
-        self._conflict_matrices = self._get_conflict_matrices()
+        self.boundaries = self._calculate_boundaries()
+        self.conflict_matrices = self._get_conflict_matrices()
 
     def custom_repair(self, solution: Solution) -> Solution:
         """
@@ -611,25 +587,12 @@ class RevenueMaximization:
         Returns:
             Solution: repaired solution
         """
-        identify_services = [service for service in self.requested_schedule for _ in
-                             range(len(self.requested_schedule[service]) - 1)]
-
         ot_idx = 0
         proposed_times = solution.real
         updated_boundaries = deepcopy(self.boundaries.real)
         for j in range(len(self.requested_times)):
             lower_bound, upper_bound = updated_boundaries[j]
             proposed_times[j] = np.clip(proposed_times[j], lower_bound, upper_bound)
-            if j != len(self.requested_times) - 1 and identify_services[j + 1] == identify_services[j]:
-                travel_time = self.operational_times[identify_services[j]][ot_idx]
-                stop_time = self.operational_times[identify_services[j]][ot_idx + 1]
-                ot_idx += 2
-                lower_bound = proposed_times[j] + travel_time + stop_time
-                max_dt_original = self.requested_times[j + 1] + self.safe_headway
-                max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
-                upper_bound = min(max_dt_original, max_dt_updated)
-                updated_boundaries[j + 1] = (lower_bound, upper_bound)
-            else:
-                ot_idx = 0
+            ot_idx, updated_boundaries = self._update_dynamic_bounds(j, ot_idx, proposed_times, updated_boundaries)
 
         return Solution(real=np.array(proposed_times, dtype=int), discrete=np.array([]))
