@@ -8,7 +8,6 @@ import pandas as pd
 from .utils import g_bin_constant, g_real_constant, g_field, mass_calculation, sin_chaotic_term
 
 from copy import deepcopy
-from scipy.spatial.distance import euclidean, hamming
 from typing import Any, List, Mapping, Tuple, Union
 
 
@@ -231,10 +230,6 @@ class GSA:
             pos = self._get_initial_positions(population_size)
         else:
             pos = initial_population
-
-        print(f"Initial population: {pos}")
-        for ind in pos:
-            print(ind.real, ind.discrete)
 
         best_solution_history = []
         convergence_curve = np.zeros(iters)

@@ -4,7 +4,7 @@ import random
 
 from functools import lru_cache
 from scipy.spatial.distance import euclidean, hamming
-from typing import Mapping, Tuple
+from typing import Tuple
 
 
 def mass_calculation(fit: np.ndarray) -> np.ndarray:
