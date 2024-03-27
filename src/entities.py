@@ -218,11 +218,11 @@ class GSA:
             pd.DataFrame: Dataframe with the history of the optimization process
         """
         # Initializations
-        vel = [Solution(np.zeros(self.r_dim), np.zeros(self.d_dim)) for _ in range(population_size)]
-        fit = np.zeros(population_size)
-        mass = np.zeros(population_size)
+        vel = [Solution(np.zeros(self.r_dim, dtype=np.float_), np.zeros(self.d_dim, dtype=np.float_)) for _ in range(population_size)]
+        fit = np.zeros(population_size, dtype=np.float_)
+        mass = np.zeros(population_size, dtype=np.float_)
 
-        g_best = Solution(np.zeros(self.r_dim), np.zeros(self.d_dim))
+        g_best = Solution(np.zeros(self.r_dim, dtype=np.int_), np.zeros(self.d_dim, dtype=np.int_))
         g_best_score = float("-inf")
         best_acc = 0.0
 
@@ -252,7 +252,6 @@ class GSA:
                 if fitness > g_best_score:
                     g_best = deepcopy(solution)
                     g_best_score = fitness
-                    g_best = solution
                     best_acc = accuracy
 
             history_row = [current_iter, g_best_score, best_acc, time.time() - timer_start, g_best.discrete, g_best.real]
@@ -301,6 +300,8 @@ class GSA:
         self.execution_time = timer_end - timer_start
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
+
+        print(g_best)
 
         return history
 
