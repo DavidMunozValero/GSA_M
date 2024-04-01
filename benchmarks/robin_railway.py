@@ -55,9 +55,12 @@ class RevenueMaximization:
         supply = Supply.from_yaml(path=path)
         for service in supply.services:
             requested_schedule[service.id] = {}
+            time = service.id.split("-")[-1]
+            hour, minute = time.split(".")
+            delta = int(hour) * 60 + int(minute)
             for stop in service.line.timetable:
-                arrival_time = int(service.line.timetable[stop][0])
-                departure_time = int(service.line.timetable[stop][1])
+                arrival_time = delta + int(service.line.timetable[stop][0])
+                departure_time = delta + int(service.line.timetable[stop][1])
                 requested_schedule[service.id][stop] = [arrival_time, departure_time]
 
         return requested_schedule
