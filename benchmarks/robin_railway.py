@@ -1,5 +1,6 @@
 """Infrastructure Manager Revenue maximization problem formulation."""
 
+import datetime
 import numpy as np
 
 from copy import deepcopy
@@ -7,11 +8,12 @@ from functools import cache
 from itertools import combinations
 from math import e, cos, pi
 from pathlib import Path
-from robin.supply.entities import Supply
-from typing import Mapping, Tuple, Union, List
+from robin.supply.entities import TimeSlot, Line, Service, Supply
+from typing import Mapping, Tuple, List
 
 from benchmarks.generator import get_revenue_behaviour
 from src.entities import GSA, Solution, Boundaries
+from services_generator.utils import build_service
 
 
 class RevenueMaximization:
@@ -50,7 +52,8 @@ class RevenueMaximization:
         self.requested_times = self.get_real_vars()
         self.scheduled_trains = np.zeros(self.n_services, dtype=np.bool_)
 
-    def _get_schedule_from_supply(self, path: Path) -> Mapping[int, Mapping[str, List[int]]]:
+    @staticmethod
+    def _get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]]:
         requested_schedule = {}
         supply = Supply.from_yaml(path=path)
         for service in supply.services:
@@ -64,6 +67,39 @@ class RevenueMaximization:
                 requested_schedule[service.id][stop] = [arrival_time, departure_time]
 
         return requested_schedule
+
+    def update_supply(self, path: Path) -> List[Service]:
+        self.update_schedule(self.best_solution)
+
+        services = []
+        supply = Supply.from_yaml(path=path)
+        scheduled_services = self.best_solution.discrete
+
+        assert len(scheduled_services) == len(supply.services), "Scheduled services and services in supply do not match"
+
+        for S_i, service in zip(scheduled_services, supply.services):
+            if not S_i:
+                continue
+
+            service_schedule = self.updated_schedule[service.id]
+            timetable = {sta: tuple(service_schedule[sta]) for sta in service_schedule}
+            departure_time = list(timetable.values())[0][1]
+            updated_line_id = str(hash(str(timetable.values())))
+            updated_line = Line(updated_line_id, service.line.name, service.line.corridor, timetable)
+            date = service.date
+            start_time = datetime.timedelta(minutes=departure_time)
+            time_slot_id = f'{start_time.seconds}'
+
+            updated_time_slot = TimeSlot(time_slot_id, service.time_slot.start, service.time_slot.end)
+            updated_service = build_service(date=date,
+                                            line=updated_line,
+                                            time_slot=updated_time_slot,
+                                            tsp=service.tsp,
+                                            rs=service.rolling_stock,
+                                            prices=service.prices)
+
+            services.append(updated_service)
+        return services
 
     def get_departure_time_indexer(self) -> Mapping[int, int]:
         """
