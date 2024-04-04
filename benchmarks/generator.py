@@ -104,8 +104,8 @@ def get_schedule_request(corridor: Mapping[str, Mapping],
     return schedule_request
 
 
-def get_revenue_behaviour(schedule: Mapping[int, Mapping[str, List[float]]]
-                          ) -> Mapping[int, Mapping[str, float]]:
+def get_revenue_behaviour(schedule: Mapping[str, Mapping[str, List[float]]]
+                          ) -> Mapping[str, Mapping[str, float]]:
     """
     Get revenue behaviour
 
