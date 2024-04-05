@@ -13,7 +13,7 @@ from typing import Mapping, Tuple, List
 
 from benchmarks.generator import get_revenue_behaviour
 from src.entities import GSA, Solution, Boundaries
-from services_generator.utils import build_service
+from robin.services_generator.utils import build_service
 
 
 class RevenueMaximization:
