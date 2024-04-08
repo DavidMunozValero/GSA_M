@@ -199,6 +199,7 @@ class GSA:
                  initial_population: Union[None, List[Solution]] = None,
                  w_max: float = 20.0,
                  w_min: float = 1e-10,
+                 verbose: bool = True
                  ) -> pd.DataFrame:
         """
         Method to optimize the objective function using Gravitational Search Algorithm
@@ -213,6 +214,7 @@ class GSA:
             initial_population (Union[None, Mapping[str, np.ndarray]]): Initial population
             w_max (float): Maximum value of the chaotic term
             w_min (float): Minimum value of the chaotic term
+            verbose (bool): True if the optimization process should be displayed, False otherwise
 
         Returns:
             pd.DataFrame: Dataframe with the history of the optimization process
@@ -234,7 +236,8 @@ class GSA:
         best_solution_history = []
         convergence_curve = np.zeros(iters)
 
-        print("GSA is optimizing  \"" + self.objective_function.__name__ + "\"")
+        if verbose:
+            print("GSA is optimizing  \"" + self.objective_function.__name__ + "\"")
 
         timer_start = time.time()
         self.start_time = time.strftime("%Y-%m-%d-%H-%M-%S")
@@ -288,7 +291,8 @@ class GSA:
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
 
-            print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
+            if verbose:
+                print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
 
             for i, individual in enumerate(pos):
                 if not self.is_feasible(individual):
@@ -301,7 +305,8 @@ class GSA:
         self.convergence = convergence_curve
         self.solution_history = best_solution_history
 
-        print(g_best)
+        if verbose:
+            print(g_best)
 
         return history
 

@@ -481,7 +481,7 @@ class RevenueMaximization:
         if im_revenue > self.best_revenue:
             self.best_revenue = im_revenue
             self.best_solution = solution
-            print(f"Scheduled trains: {np.sum(S_i)}")
+            # print(f"Scheduled trains: {np.sum(S_i)}")
 
         return im_revenue
 
