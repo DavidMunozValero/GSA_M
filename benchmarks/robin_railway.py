@@ -68,12 +68,14 @@ class RevenueMaximization:
 
         return requested_schedule
 
-    def update_supply(self, path: Path) -> List[Service]:
-        self.update_schedule(self.best_solution)
+    def update_supply(self, path: Path,
+                      solution: Solution
+                      ) -> List[Service]:
+        self.update_schedule(solution)
 
         services = []
         supply = Supply.from_yaml(path=path)
-        scheduled_services = self.best_solution.discrete
+        scheduled_services = solution.discrete
 
         assert len(scheduled_services) == len(supply.services), "Scheduled services and services in supply do not match"
 
@@ -82,12 +84,12 @@ class RevenueMaximization:
                 continue
 
             service_schedule = self.updated_schedule[service.id]
-            timetable = {sta: tuple(service_schedule[sta]) for sta in service_schedule}
+            timetable = {sta: tuple(map(float, service_schedule[sta])) for sta in service_schedule}
             departure_time = list(timetable.values())[0][1]
             updated_line_id = str(hash(str(timetable.values())))
             updated_line = Line(updated_line_id, service.line.name, service.line.corridor, timetable)
             date = service.date
-            start_time = datetime.timedelta(minutes=departure_time)
+            start_time = datetime.timedelta(minutes=float(departure_time))
             time_slot_id = f'{start_time.seconds}'
 
             updated_time_slot = TimeSlot(time_slot_id, service.time_slot.start, service.time_slot.end)
