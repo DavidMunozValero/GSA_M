@@ -115,3 +115,43 @@ def get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]
             requested_schedule[service.id][stop] = [arrival_time, departure_time]
 
     return requested_schedule
+
+
+class TrainSchedulePlotter:
+    def __init__(self, schedule_data):
+        self.schedule_data = schedule_data
+        self.station_order = self.infer_station_order()
+
+    def infer_station_order(self):
+        trips = [list(trip.keys()) for trip in self.schedule_data.values()]
+        line = trips.pop(trips.index(max(trips, key=len)))
+
+        for trip in trips:
+            for i, s in enumerate(trip):
+                if s not in line:
+                    line.insert(line.index(trip[i + 1]), s)
+
+        return line
+
+    def plot(self, save_path: Union[Path, None] = None) -> None:
+        fig, ax = plt.subplots(figsize=(15, 8))
+
+        for train_id, stations in self.schedule_data.items():
+            times = [time for station, (arrival, departure) in stations.items() for time in (arrival, departure)]
+            station_indices = [self.station_order.index(station) for station in stations.keys() for _ in range(2)]
+            ax.plot(times, station_indices, marker='o', label=train_id)
+
+        ax.set_yticks(range(len(self.station_order)))
+        ax.set_yticklabels(self.station_order)
+
+        ax.grid(True)
+        ax.set_title('Train schedule', fontweight='bold')
+        ax.set_xlabel('Minutes')
+        ax.set_ylabel('Stations')
+        # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+        plt.tight_layout()
+        plt.show()
+
+        if save_path:
+            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
