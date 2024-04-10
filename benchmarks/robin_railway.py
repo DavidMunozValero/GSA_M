@@ -9,9 +9,8 @@ from itertools import combinations
 from math import e, cos, pi
 from pathlib import Path
 from robin.supply.entities import TimeSlot, Line, Service, Supply
-from typing import Mapping, Tuple, List
+from typing import Any, Mapping, Tuple, List
 
-from benchmarks.generator import get_revenue_behaviour
 from src.entities import GSA, Solution, Boundaries
 from robin.services_generator.utils import build_service
 
@@ -21,7 +20,8 @@ class RevenueMaximization:
     Class for the IM revenue maximization problem.
     """
     def __init__(self,
-                 supply_config_path: Path,
+                 requested_schedule: Mapping[str, Mapping[str, Any]],
+                 revenue_behaviour: Mapping[str, Mapping[str, float]],
                  safe_headway: int = 10.0,
                  max_stop_time: int = 10.0
                  ) -> None:
@@ -29,12 +29,13 @@ class RevenueMaximization:
         Constructor
 
         Args:
-            supply_config_path (Path): supply config path
+            requested_schedule (Mapping[str, List[str, Tuple[float, float]]]): requested schedule
+            revenue_behaviour (Mapping[str, Mapping[str, float]]): revenue
             safe_headway (int): safe headway
             max_stop_time (int): max stop time
         """
-        self.requested_schedule = self._get_schedule_from_supply(path=supply_config_path)
-        self.revenue = get_revenue_behaviour(self.requested_schedule)
+        self.requested_schedule = requested_schedule
+        self.revenue = revenue_behaviour
         self.safe_headway = safe_headway
         self.max_stop_time = max_stop_time
 
@@ -51,22 +52,6 @@ class RevenueMaximization:
         self.rev_indexer = {idx: sch for idx, sch in enumerate(self.requested_schedule)}
         self.requested_times = self.get_real_vars()
         self.scheduled_trains = np.zeros(self.n_services, dtype=np.bool_)
-
-    @staticmethod
-    def _get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]]:
-        requested_schedule = {}
-        supply = Supply.from_yaml(path=path)
-        for service in supply.services:
-            requested_schedule[service.id] = {}
-            time = service.id.split("-")[-1]
-            hour, minute = time.split(".")
-            delta = int(hour) * 60 + int(minute)
-            for stop in service.line.timetable:
-                arrival_time = delta + int(service.line.timetable[stop][0])
-                departure_time = delta + int(service.line.timetable[stop][1])
-                requested_schedule[service.id][stop] = [arrival_time, departure_time]
-
-        return requested_schedule
 
     def update_supply(self, path: Path,
                       solution: Solution
@@ -437,7 +422,13 @@ class RevenueMaximization:
         """
         population = []
         ot_idx = 0
-        for _ in range(population_size):
+        for i in range(population_size):
+            if i == 0:
+                schedule_all = Solution(real=np.array(self.requested_times, dtype=int),
+                                        discrete=np.ones(self.n_services, dtype=np.bool_))
+                if self.is_feasible(schedule_all, schedule_all.discrete):
+                    population.append(Solution(np.array(self.requested_times, dtype=int), np.array([])))
+                    continue
             proposed_times = deepcopy(self.requested_times)
             updated_boundaries = deepcopy(self.boundaries.real)
             for j in range(len(self.requested_times)):

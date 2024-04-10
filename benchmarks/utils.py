@@ -9,7 +9,7 @@ from typing import Mapping
 
 from pathlib import Path
 from robin.supply.entities import Supply
-from typing import Union
+from typing import List, Union
 
 
 def get_rus_revenue(supply: Supply,
@@ -82,3 +82,36 @@ def sns_line_plot(df: pd.DataFrame,
     plt.show()
     if save_path:
         fig.savefig(save_path, format='svg', dpi=300, bbox_inches='tight', transparent=True)
+
+
+def int_input(prompt: str) -> int:
+    """
+    Get an integer input from the user.
+
+    Args:
+        prompt: Message to show to the user.
+
+    Returns:
+        int: Integer input.
+    """
+    while True:
+        try:
+            return int(input(prompt))
+        except ValueError:
+            print('Invalid input. Please, enter an integer.')
+
+
+def get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]]:
+    requested_schedule = {}
+    supply = Supply.from_yaml(path=path)
+    for service in supply.services:
+        requested_schedule[service.id] = {}
+        time = service.id.split("-")[-1]
+        hour, minute = time.split(".")
+        delta = int(hour) * 60 + int(minute)
+        for stop in service.line.timetable:
+            arrival_time = delta + int(service.line.timetable[stop][0])
+            departure_time = delta + int(service.line.timetable[stop][1])
+            requested_schedule[service.id][stop] = [arrival_time, departure_time]
+
+    return requested_schedule
