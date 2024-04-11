@@ -10,3 +10,5 @@ seaborn
 ucimlrepo
 snakeviz
 tqdm
+shapely
+geopy
