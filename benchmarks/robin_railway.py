@@ -5,14 +5,15 @@ import numpy as np
 
 from copy import deepcopy
 from functools import cache
-from itertools import combinations
 from math import e, cos, pi
 from pathlib import Path
+from robin.services_generator.utils import build_service
 from robin.supply.entities import TimeSlot, Line, Service, Supply
+from shapely.geometry import Polygon
 from typing import Any, Mapping, Tuple, List
 
-from src.entities import GSA, Solution, Boundaries
-from robin.services_generator.utils import build_service
+from benchmarks.utils import get_stations_positions
+from src.entities import Solution, Boundaries
 
 
 class RevenueMaximization:
@@ -22,6 +23,7 @@ class RevenueMaximization:
     def __init__(self,
                  requested_schedule: Mapping[str, Mapping[str, Any]],
                  revenue_behaviour: Mapping[str, Mapping[str, float]],
+                 line: Mapping[str, Tuple[float, float]],
                  safe_headway: int = 10.0,
                  max_stop_time: int = 10.0
                  ) -> None:
@@ -35,7 +37,9 @@ class RevenueMaximization:
             max_stop_time (int): max stop time
         """
         self.requested_schedule = requested_schedule
+        self.line_stations = get_stations_positions(line)
         self.revenue = revenue_behaviour
+        self.line = line
         self.safe_headway = safe_headway
         self.max_stop_time = max_stop_time
 
@@ -43,7 +47,7 @@ class RevenueMaximization:
         self.operational_times = self.get_operational_times()
         self.updated_schedule = deepcopy(self.requested_schedule)
         self.boundaries = self._calculate_boundaries()
-        self.conflict_matrices = self._get_conflict_matrices()
+        self.conflict_matrix = self._get_conflict_matrix()
         self.best_revenue = -np.inf
         self.best_solution = None
         self.feasible_schedules = []
@@ -88,13 +92,13 @@ class RevenueMaximization:
             services.append(updated_service)
         return services
 
-    def get_departure_time_indexer(self) -> Mapping[int, int]:
+    def get_departure_time_indexer(self) -> Mapping[int, str]:
         """
         Build dictionary where keys are the index of the departure times and values are the service where the departure
         time belongs to.
 
         Returns:
-            Mapping[int, int]: departure time indexer.
+            Mapping[int, str]: departure time indexer.
         """
         i = 0
         dt_indexer = {}
@@ -144,7 +148,7 @@ class RevenueMaximization:
             bool: True if the departure time is feasible, False otherwise
         """
         S_i = np.array(S_i, dtype=np.bool_)
-        if not S_i.dot(np.array([np.sum(S_i.dot(service_sec_arr)) for service_sec_arr in self.conflict_matrices])):
+        if not np.any((S_i * self.conflict_matrix)[S_i]):
             return True
         return False
 
@@ -163,33 +167,86 @@ class RevenueMaximization:
                 return False
         return True
 
-    def _get_conflict_matrices(self) -> np.array:
+    def _get_conflict_matrix(self) -> np.array:
         """
-        Get conflict matrices for the services.
+        Get conflict matrix
 
         Returns:
-            np.array: conflict matrices.
+            np.array: conflict matrix.
         """
-        conflict_matrices = np.empty(self.n_services, dtype=object)
+        def get_closest_station(station: str,
+                                other_service_stations: Tuple[str, ...]
+                                ) -> str:
+            """
+            Get the closest station
 
-        for c_id, service in enumerate(self.updated_schedule):
-            stops = list(self.updated_schedule[service].keys())
-            service_sec_arr = np.zeros(shape=(self.n_services, len(stops)), dtype=np.bool_)
-            for i, service_k in enumerate(self.updated_schedule):
-                stops_k = list(self.updated_schedule[service_k].keys())
-                if service == service_k or not set(stops).intersection(set(stops_k)):
-                    continue
-                for j, stop in enumerate(stops):
-                    if stop not in stops_k:
+            Args:
+                station (str): station
+                other_service_stations (Tuple[str, ...]): other service stations
+
+            Returns:
+                str: closest station
+            """
+            station_idx = self.line_stations[station]
+            closest_station = None
+            min_distance = float('inf')
+            for other_station in other_service_stations:
+                other_station_idx = self.line_stations[other_station]
+                distance = abs(station_idx - other_station_idx)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_station = other_station
+            return closest_station
+
+        conflict_matrix = np.zeros((len(self.requested_schedule), len(self.requested_schedule)), dtype=np.bool_)
+
+        security_gap = 10
+        train_gap = np.ceil(security_gap // 2)
+        for i, service in enumerate(self.requested_schedule):
+            service_stations = tuple(self.requested_schedule[service].keys())
+            for k, station in enumerate(service_stations):
+                if k == len(service_stations) - 1:
+                    break
+
+                segment = Polygon([(self.requested_schedule[service][station][1] - train_gap,
+                                    self.line_stations[station]),
+                                   (self.requested_schedule[service][service_stations[k + 1]][0] - train_gap,
+                                    self.line_stations[service_stations[k + 1]]),
+                                   (self.requested_schedule[service][service_stations[k + 1]][0] + train_gap,
+                                    self.line_stations[service_stations[k + 1]]),
+                                   (self.requested_schedule[service][station][1] + train_gap,
+                                    self.line_stations[station])])
+
+                for j, other_service in enumerate(tuple(self.requested_schedule.keys())[i + 1:], start=i + 1):
+                    if other_service == service:
                         continue
-                    departure_time_s1 = self.updated_schedule[service][stop][1]
-                    departure_time_s2 = self.updated_schedule[service_k][stop][1]
-                    if abs(departure_time_s1 - departure_time_s2) < self.safe_headway:
-                        service_sec_arr[i, j] = 1
+                    other_service_stations = tuple(self.requested_schedule[other_service].keys())
+                    if station in other_service_stations:
+                        other_service_init = station
+                    else:
+                        other_service_init = get_closest_station(station, other_service_stations)
 
-            conflict_matrices[c_id] = service_sec_arr
+                    is_last_station = other_service_init == other_service_stations[-1]
+                    is_out_of_bounds = self.line_stations[other_service_init] >= self.line_stations[service_stations[k + 1]]
+                    if is_last_station or is_out_of_bounds:
+                        continue
 
-        return conflict_matrices
+                    other_service_end = other_service_stations[other_service_stations.index(other_service_init) + 1]
+                    other_segment = Polygon([(self.requested_schedule[other_service][other_service_init][1] - train_gap,
+                                              self.line_stations[other_service_init]),
+                                             (self.requested_schedule[other_service][other_service_end][0] - train_gap,
+                                              self.line_stations[other_service_end]),
+                                             (self.requested_schedule[other_service][other_service_end][0] + train_gap,
+                                              self.line_stations[other_service_end]),
+                                             (self.requested_schedule[other_service][other_service_init][1] + train_gap,
+                                              self.line_stations[other_service_init])])
+
+                    intersection = segment.intersection(other_segment)
+                    if intersection and type(intersection) is Polygon:
+                        conflict_matrix[i][j] = True
+                        conflict_matrix[j][i] = True
+
+        return conflict_matrix
 
     def _travel_times_feasibility(self, S_i: np.array) -> bool:
         """
@@ -258,7 +315,7 @@ class RevenueMaximization:
                 best_schedule = fs
         return np.array(best_schedule)
 
-    def get_heuristic_schedule(self, timetable: Solution, strategy: int = 4):
+    def get_heuristic_schedule(self, timetable: Solution) -> np.array:
         """
         Get best schedule
 
@@ -268,116 +325,35 @@ class RevenueMaximization:
 
         Returns:
             dict: best schedule
+
+        CaSP: Conflict-avoiding Sequential Planner
+        1) Schedule services without conflicts by checking the conflict matrices.
+        2) Get dictionary of services with conflicts and their revenue based on the updated schedule
+        3) While there are services with conflicts:
+            3.1) Get service 's' with the best revenue, and schedule it
+            3.2) Get set of services that have conflict with service 's'
+            3.3) Update conflicts dictionary by removing services that have conflict with service 's'
+                 (including 's')
         """
-        if strategy == 1:
-            # Return the feasible schedule with the highest number of scheduled services
-            self.update_feasible_schedules(timetable)
-            scheduled_trains = sorted(self.feasible_schedules, key=lambda x: np.sum(x), reverse=True)
-            return scheduled_trains[0]
+        self.update_schedule(timetable)
+        default_planner = np.array([(~cm).all() for cm in self.conflict_matrix], dtype=np.bool_)
+        conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
+        conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
+        conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
 
-        if strategy == 2:
-            # Return first feasible schedule found by iterating over all possible schedules, starting from the highest
-            self.update_schedule(timetable)
-            for i in range(2**self.n_services):
-                n_rows = 2 ** self.n_services
-                index = n_rows - 1 - i
-                planned_services = np.array([int(x) for x in format(index, f'0{self.n_services}b')], dtype=np.bool_)
-                if self.is_feasible(timetable, planned_services, update_schedule=False):
-                    return planned_services
+        while conflicts_revenue:
+            # Get service 's' with the best revenue, and schedule it
+            s, _ = conflicts_revenue.popitem()
+            default_planner[self.indexer[s]] = True
 
-        if strategy == 3:
-            # TODO: Not working properly
-            # Return feasible schedule with the highest number of scheduled services using a bisection algorithm
-            target = self.n_services // 2
-            upper_bound = self.n_services
-            lower_bound = 0
-            best_row_found = np.zeros(self.n_services, dtype=np.bool_)
+            # Get set of services that have conflict with service 's'
+            conflicts_with_s = np.where(self.indexer[s])[0]
+            conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
 
-            i = 1
-            explored = set()
-            while target not in explored:
-                for true_positions in combinations(range(self.n_services), target):
-                    row = np.zeros(self.n_services, dtype=np.bool_)
-                    row[list(true_positions)] = True
-                    if self.is_feasible(timetable, row):
-                        if not any(t > target for t in explored):
-                            best_row_found = row
-                        # Upper bounds
-                        lower_bound = target
-                        target = (upper_bound + lower_bound) // 2 if lower_bound < upper_bound - 1 else upper_bound
-                        break
-                else:
-                    # Exhausted all combinations in iteration. Reducing target
-                    upper_bound = target
-                    target = (upper_bound + lower_bound) // 2
-                explored.add(target)
-                i += 1
+            # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
+            conflicts_revenue = dict(filter(lambda p: p[0] not in conflicts_with_s, conflicts_revenue.items()))
 
-            return best_row_found
-
-        if strategy == 4:
-            """
-            CaSP: Conflict-avoiding Sequential Planner
-            1) Schedule services without conflicts by checking the conflict matrices.
-            2) Get dictionary of services with conflicts and their revenue based on the updated schedule
-            3) While there are services with conflicts:
-                3.1) Get service 's' with best revenue, and schedule it
-                3.2) Get set of services that have conflict with service 's'
-                3.3) Update conflicts dictionary by removing services that have conflict with service 's' 
-                     (including 's')
-            """
-            self.update_schedule(timetable)
-            default_planner = np.array([(~cm).all() for cm in self.conflict_matrices], dtype=np.bool_)
-            conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
-            conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
-            conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
-
-            while conflicts_revenue:
-                # Get service 's' with the best revenue, and schedule it
-                s, _ = conflicts_revenue.popitem()
-                default_planner[self.indexer[s]] = True
-
-                # Get set of services that have conflict with service 's'
-                rows_with_true = np.any(self.conflict_matrices[self.indexer[s]], axis=1)
-                conflicts_with_s = np.where(rows_with_true)[0]
-                conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
-
-                # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
-                conflicts_revenue = dict(filter(lambda p: p[0] not in conflicts_with_s, conflicts_revenue.items()))
-
-            return default_planner
-
-        if strategy == 5:
-            # TODO: Not working properly
-            # Use GSA to maximize number of scheduled trains for a given timetable
-            def gsa_feasibility(solution):
-                S_i = solution.discrete
-                print("Test: ", S_i)
-                return self._departure_time_feasibility(S_i)
-
-            def get_num_trains(solution):
-                n_trains = np.sum(solution.discrete)
-                return n_trains, 0
-
-            self.update_schedule(timetable)
-            boundaries = Boundaries(real=[], discrete=[(0, 1) for _ in range(self.n_services)])
-
-            gsa_algo = GSA(objective_function=get_num_trains,
-                           r_dim=0,
-                           d_dim=self.n_services,
-                           boundaries=boundaries,
-                           is_feasible=gsa_feasibility)
-
-            gsa_algo.set_seed(seed=28)
-
-            training_history = gsa_algo.optimize(population_size=5,
-                                                 iters=10,
-                                                 chaotic_constant=False,
-                                                 repair_solution=False)
-
-            return training_history.iloc[-1]['Discrete']
-
-        return np.zeros(self.n_services, dtype=np.bool_)
+        return default_planner
 
     def get_fitness_gsa(self,
                         timetable: Solution,
@@ -620,7 +596,7 @@ class RevenueMaximization:
                 self.updated_schedule[service][stop][1] = departure_time
 
         self.boundaries = self._calculate_boundaries()
-        self.conflict_matrices = self._get_conflict_matrices()
+        self.conflict_matrix = self._get_conflict_matrix()
 
     def custom_repair(self, solution: Solution) -> Solution:
         """

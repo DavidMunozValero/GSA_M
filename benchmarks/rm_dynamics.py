@@ -12,7 +12,7 @@ from robin.kernel.entities import Kernel
 from robin.plotter.entities import KernelPlotter
 from robin.scraping.entities import SupplySaver
 from robin.services_generator.entities import ServiceGenerator
-from robin.supply.entities import Service
+from robin.supply.entities import Service, Supply
 
 from pathlib import Path
 from tqdm.notebook import tqdm
@@ -53,14 +53,20 @@ class RailwayMarketDynamics:
             ) -> List[Service]:
         global_train_hist = pd.DataFrame()
         runs_best_solution_history = {}
+        supply = Supply.from_yaml(self.supply_config_file)
+
         requested_schedule = get_schedule_from_supply(self.supply_config_file)
         revenue_behaviour = get_revenue_behaviour(requested_schedule)
-        plotter = TrainSchedulePlotter(requested_schedule)
+        line = {station.id: station.coords for station in supply.lines[0].stations}
+        plotter = TrainSchedulePlotter(requested_schedule, line)
+        print(requested_schedule)
+        print(line)
         plotter.plot(save_path=Path('../figures/requested_schedule.pdf'))
 
         for r in tqdm(range(1, gsa_runs + 1)):
             sm = RevenueMaximization(requested_schedule=requested_schedule,
                                      revenue_behaviour=revenue_behaviour,
+                                     line=line,
                                      safe_headway=10)
 
             gsa_algo = GSA(objective_function=sm.get_fitness_gsa,
@@ -143,7 +149,7 @@ class RailwayMarketDynamics:
                                                  key=lambda x: x[1][1]))
 
         q2_solution_index = np.floor(gsa_runs // 2).astype(int)
-        gsa_solution = tuple(runs_best_solution_history.items())[0]
+        gsa_solution = tuple(runs_best_solution_history.items())[q2_solution_index]
 
         print(f"\tMedian solution: Run {gsa_solution[0]}")
         max_revenue = sum([sm.revenue[service]['canon'] for service in sm.revenue])
@@ -160,7 +166,12 @@ class RailwayMarketDynamics:
         services = sm.update_supply(path=self.supply_config_file,
                                     solution=gsa_solution[1][0])
 
-        plotter = TrainSchedulePlotter(sm.updated_schedule)
+        filtered_services = {}
+        for i, service in enumerate(sm.updated_schedule):
+            if gsa_solution[1][0].discrete[i]:
+                filtered_services[service] = sm.updated_schedule[service]
+
+        plotter = TrainSchedulePlotter(filtered_services, line)
         plotter.plot(save_path=Path('../figures/updated.pdf'))
 
         tt_file_name = f'{self.supply_config_file.stem}_gsa'

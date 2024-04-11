@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from typing import Mapping
+from typing import Mapping, Tuple
 
+from geopy.distance import geodesic
 from pathlib import Path
 from robin.supply.entities import Supply
 from typing import List, Union
@@ -117,32 +118,44 @@ def get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]
     return requested_schedule
 
 
+def get_stations_positions(line, scale: Union[int, None] = None) -> Mapping[str, float]:
+    stations_positions = {}
+    prev_station = None
+    for i, station in enumerate(tuple(line.keys())):
+        if i == 0:
+            stations_positions[station] = 0
+        else:
+            prev_distance = tuple(stations_positions.values())[-1]
+            stations_distance = geodesic(line[prev_station], line[station]).km
+            stations_positions[station] = prev_distance + stations_distance
+        prev_station = station
+
+    if not scale:
+        return stations_positions
+
+    max_distance = tuple(stations_positions.values())[-1]
+    for station in stations_positions:
+        stations_positions[station] = np.round(stations_positions[station] / max_distance * 1000, 2)
+
+    return stations_positions
+
+
 class TrainSchedulePlotter:
-    def __init__(self, schedule_data):
+    def __init__(self, schedule_data, line: Mapping[str, Tuple[float, float]]):
         self.schedule_data = schedule_data
-        self.station_order = self.infer_station_order()
-
-    def infer_station_order(self):
-        trips = [list(trip.keys()) for trip in self.schedule_data.values()]
-        line = trips.pop(trips.index(max(trips, key=len)))
-
-        for trip in trips:
-            for i, s in enumerate(trip):
-                if s not in line:
-                    line.insert(line.index(trip[i + 1]), s)
-
-        return line
+        self.line = line
+        self.station_positions = get_stations_positions(line, scale=1000)
 
     def plot(self, save_path: Union[Path, None] = None) -> None:
         fig, ax = plt.subplots(figsize=(15, 8))
 
         for train_id, stations in self.schedule_data.items():
             times = [time for station, (arrival, departure) in stations.items() for time in (arrival, departure)]
-            station_indices = [self.station_order.index(station) for station in stations.keys() for _ in range(2)]
+            station_indices = [self.station_positions[station] for station in stations.keys() for _ in range(2)]
             ax.plot(times, station_indices, marker='o', label=train_id)
 
-        ax.set_yticks(range(len(self.station_order)))
-        ax.set_yticklabels(self.station_order)
+        ax.set_yticks(tuple(self.station_positions.values()))
+        ax.set_yticklabels(self.station_positions.keys())
 
         ax.grid(True)
         ax.set_title('Train schedule', fontweight='bold')
