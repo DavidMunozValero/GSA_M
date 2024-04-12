@@ -10,6 +10,8 @@ from typing import Mapping, Tuple
 from geopy.distance import geodesic
 from pathlib import Path
 from robin.supply.entities import Supply
+from shapely.geometry.polygon import LinearRing, Polygon
+from descartes import PolygonPatch
 from typing import List, Union
 
 
@@ -168,3 +170,46 @@ class TrainSchedulePlotter:
 
         if save_path:
             fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+
+    def plot_security_gaps(self,
+                           security_gap: int = 10,
+                           save_path: Union[Path, None] = None
+                           ) -> None:
+        fig, ax = plt.subplots(figsize=(15, 8))
+
+        min_x = 0
+        max_x = 0
+        for train_id, train_schedule in self.schedule_data.items():
+            stops = list(train_schedule.keys())
+            for i in range(len(stops) - 1):  # Iterate trips
+                departure_x = train_schedule[stops[i]][1]
+                arrival_x = train_schedule[stops[i + 1]][0]
+                if departure_x < min_x:
+                    min_x = departure_x
+                if arrival_x > max_x:
+                    max_x = arrival_x
+                departure_station_y = self.station_positions[stops[i]]
+                arrival_station_y = self.station_positions[stops[i+1]]
+                gap = security_gap // 2
+                vertices = [(departure_x - gap, departure_station_y), (arrival_x - gap, arrival_station_y),
+                            (arrival_x + gap, arrival_station_y), (departure_x + gap, departure_station_y)]
+                ring_mixed = Polygon(vertices)
+                ring_patch = PolygonPatch(ring_mixed)
+                ax.add_patch(ring_patch)
+
+        ax.set_xlim(min_x - security_gap, max_x + security_gap)
+        ax.set_yticks(tuple(self.station_positions.values()))
+        ax.set_yticklabels(self.station_positions.keys())
+
+        ax.grid(True)
+        ax.set_title('Train schedule', fontweight='bold')
+        ax.set_xlabel('Minutes')
+        ax.set_ylabel('Stations')
+        # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+
+        plt.tight_layout()
+        plt.show()
+
+        if save_path:
+            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+
