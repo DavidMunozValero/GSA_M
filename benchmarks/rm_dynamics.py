@@ -1,6 +1,9 @@
 """Entities for Railway Market Tests."""
+
+import cProfile as profile
 import numpy as np
 import pandas as pd
+import time
 import tqdm
 
 from benchmarks.generator import get_revenue_behaviour
@@ -76,12 +79,21 @@ class RailwayMarketDynamics:
                            d_dim=0,
                            boundaries=sm.boundaries)
 
+            pr = profile.Profile()
+            pr.disable()
+
+            start = time.time()
+            pr.enable()
             training_history = gsa_algo.optimize(population_size=gsa_population,
                                                  iters=gsa_iters,
                                                  chaotic_constant=gsa_chaotic,
                                                  repair_solution=True,
                                                  initial_population=sm.get_initial_population(gsa_population),
                                                  verbose=gsa_verbosity)
+            pr.disable()
+            print(f"Elapsed time: {round(time.time() - start, 2)} seconds")
+
+            pr.dump_stats('profile.pstat')
 
             training_history.insert(0, "Run", r)
             training_history['Discrete'] = [sm.best_solution.discrete for _ in range(len(training_history))]
