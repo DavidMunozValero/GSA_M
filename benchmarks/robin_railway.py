@@ -9,8 +9,7 @@ from math import e, cos, pi
 from pathlib import Path
 from robin.services_generator.utils import build_service
 from robin.supply.entities import TimeSlot, Line, Service, Supply
-from shapely.geometry import Polygon
-from typing import Any, Mapping, Tuple, List
+from typing import Any, List, Mapping, Tuple, Union
 
 from benchmarks.utils import get_stations_positions
 from src.entities import Solution, Boundaries
@@ -24,8 +23,8 @@ class RevenueMaximization:
                  requested_schedule: Mapping[str, Mapping[str, Any]],
                  revenue_behaviour: Mapping[str, Mapping[str, float]],
                  line: Mapping[str, Tuple[float, float]],
-                 safe_headway: int = 10.0,
-                 max_stop_time: int = 10.0
+                 safe_headway: int = 10,
+                 max_stop_time: int = 10
                  ) -> None:
         """
         Constructor
@@ -176,46 +175,46 @@ class RevenueMaximization:
         """
         def get_closest_station(station: str,
                                 other_service_stations: Tuple[str, ...]
-                                ) -> str:
+                                ) -> Union[str, None]:
             """
-            Get the closest station
+            GET first station of other_service_stations before station, based on line_stations
 
             Args:
-                station (str): station
-                other_service_stations (Tuple[str, ...]): other service stations
+                station:
+                other_service_stations:
 
             Returns:
-                str: closest station
+
             """
-            station_idx = self.line_stations[station]
-            closest_station = None
-            min_distance = float('inf')
-            for other_station in other_service_stations:
-                other_station_idx = self.line_stations[other_station]
-                distance = abs(station_idx - other_station_idx)
-                if distance < min_distance:
-                    min_distance = distance
-                    closest_station = other_station
-            return closest_station
+            list_stations = tuple(self.line_stations.keys())
+            for s in list_stations[:list_stations.index(station)][::-1]:
+                if s in other_service_stations:
+                    return s
+            return None
+
+        @cache
+        def get_x_line_equation(A, B):
+            x_coords = (A[0], B[0])
+            y_coords = (A[1], B[1])
+            m = (y_coords[1] - y_coords[0]) / (x_coords[1] - x_coords[0])
+            c = y_coords[0] - m * x_coords[0]
+            return lambda y: (y - c) / m
+
+        def same_sign(x, y):
+            return x * y > 0
 
         conflict_matrix = np.zeros((len(self.requested_schedule), len(self.requested_schedule)), dtype=np.bool_)
 
-        security_gap = 10
-        train_gap = np.ceil(security_gap // 2)
         for i, service in enumerate(self.requested_schedule):
             service_stations = tuple(self.requested_schedule[service].keys())
             for k, station in enumerate(service_stations):
                 if k == len(service_stations) - 1:
                     break
 
-                segment = Polygon([(self.requested_schedule[service][station][1] - train_gap,
-                                    self.line_stations[station]),
-                                   (self.requested_schedule[service][service_stations[k + 1]][0] - train_gap,
-                                    self.line_stations[service_stations[k + 1]]),
-                                   (self.requested_schedule[service][service_stations[k + 1]][0] + train_gap,
-                                    self.line_stations[service_stations[k + 1]]),
-                                   (self.requested_schedule[service][station][1] + train_gap,
-                                    self.line_stations[station])])
+                departure_station = station
+                arrival_station = service_stations[k + 1]
+                departure_time = self.requested_schedule[service][station][1]
+                arrival_time = self.requested_schedule[service][service_stations[k + 1]][0]
 
                 for j, other_service in enumerate(tuple(self.requested_schedule.keys())[i + 1:], start=i + 1):
                     if other_service == service:
@@ -224,27 +223,35 @@ class RevenueMaximization:
                     if station in other_service_stations:
                         other_service_init = station
                     else:
-                        other_service_init = get_closest_station(station, other_service_stations)
+                        other_service_init = get_closest_station(station,
+                                                                 other_service_stations)
+
+                    if not other_service_init:
+                        continue
 
                     is_last_station = other_service_init == other_service_stations[-1]
-                    is_out_of_bounds = self.line_stations[other_service_init] >= self.line_stations[service_stations[k + 1]]
-                    if is_last_station or is_out_of_bounds:
+                    is_out_of_range = self.line_stations[other_service_init] >= self.line_stations[service_stations[k + 1]]
+                    if is_last_station or is_out_of_range:
                         continue
 
                     other_service_end = other_service_stations[other_service_stations.index(other_service_init) + 1]
-                    other_segment = Polygon([(self.requested_schedule[other_service][other_service_init][1] - train_gap,
-                                              self.line_stations[other_service_init]),
-                                             (self.requested_schedule[other_service][other_service_end][0] - train_gap,
-                                              self.line_stations[other_service_end]),
-                                             (self.requested_schedule[other_service][other_service_end][0] + train_gap,
-                                              self.line_stations[other_service_end]),
-                                             (self.requested_schedule[other_service][other_service_init][1] + train_gap,
-                                              self.line_stations[other_service_init])])
+                    A = (self.requested_schedule[other_service][other_service_init][1],
+                        self.line_stations[other_service_init])
+                    B =(self.requested_schedule[other_service][other_service_end][0],
+                        self.line_stations[other_service_end])
 
-                    intersection = segment.intersection(other_segment)
-                    if intersection and type(intersection) is Polygon:
-                        conflict_matrix[i][j] = True
-                        conflict_matrix[j][i] = True
+                    line_other = get_x_line_equation(A, B)
+                    other_departure_time = line_other(self.line_stations[departure_station])
+                    other_arrival_time = line_other(self.line_stations[arrival_station])
+
+                    dt_gap = other_departure_time - departure_time
+                    at_gap = other_arrival_time - arrival_time
+
+                    if same_sign(dt_gap, at_gap) and all(abs(t) >= self.safe_headway for t in (dt_gap, at_gap)):
+                        continue
+                    else:
+                        conflict_matrix[i, j] = True
+                        conflict_matrix[j, i] = True
 
         return conflict_matrix
 
@@ -347,7 +354,7 @@ class RevenueMaximization:
             default_planner[self.indexer[s]] = True
 
             # Get set of services that have conflict with service 's'
-            conflicts_with_s = np.where(self.indexer[s])[0]
+            conflicts_with_s = np.where(self.conflict_matrix[self.indexer[s]])[0]
             conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
 
             # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
@@ -502,7 +509,6 @@ class RevenueMaximization:
         if im_revenue > self.best_revenue:
             self.best_revenue = im_revenue
             self.best_solution = solution
-            # print(f"Scheduled trains: {np.sum(S_i)}")
 
         return im_revenue
 
