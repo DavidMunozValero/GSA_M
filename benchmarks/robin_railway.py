@@ -47,6 +47,7 @@ class RevenueMaximization:
         self.updated_schedule = deepcopy(self.requested_schedule)
         self.boundaries = self._calculate_boundaries()
         self.conflict_matrix = self._get_conflict_matrix()
+        print(self.conflict_matrix)
         self.best_revenue = -np.inf
         self.best_solution = None
         self.feasible_schedules = []
@@ -200,12 +201,11 @@ class RevenueMaximization:
             c = y_coords[0] - m * x_coords[0]
             return lambda y: (y - c) / m
 
-        def same_sign(x, y):
-            return x * y > 0
-
         conflict_matrix = np.zeros((len(self.requested_schedule), len(self.requested_schedule)), dtype=np.bool_)
+        # print(self.line_stations)
 
         for i, service in enumerate(self.requested_schedule):
+            # print(f"Service: {service} - {i}")
             service_stations = tuple(self.requested_schedule[service].keys())
             for k, station in enumerate(service_stations):
                 if k == len(service_stations) - 1:
@@ -213,46 +213,51 @@ class RevenueMaximization:
 
                 departure_station = station
                 arrival_station = service_stations[k + 1]
+                # print(f"\tDeparture: {departure_station} - Arrival: {arrival_station}")
                 departure_time = self.requested_schedule[service][station][1]
                 arrival_time = self.requested_schedule[service][service_stations[k + 1]][0]
 
-                for j, other_service in enumerate(tuple(self.requested_schedule.keys())[i + 1:], start=i + 1):
-                    if other_service == service:
+                for j, other_service in enumerate(self.requested_schedule):
+                    # print(f"\t\tOther Service: {other_service} - {j}")
+                    if other_service == service or conflict_matrix[i, j]:
                         continue
                     other_service_stations = tuple(self.requested_schedule[other_service].keys())
-                    if station in other_service_stations:
-                        other_service_init = station
-                    else:
-                        other_service_init = get_closest_station(station,
-                                                                 other_service_stations)
 
-                    if not other_service_init:
-                        continue
+                    stations_between = []
+                    for s in other_service_stations:
+                        if self.line_stations[departure_station] <= self.line_stations[s] <= self.line_stations[arrival_station]:
+                            stations_between.append(s)
 
-                    is_last_station = other_service_init == other_service_stations[-1]
-                    is_out_of_range = self.line_stations[other_service_init] >= self.line_stations[service_stations[k + 1]]
-                    if is_last_station or is_out_of_range:
-                        continue
-
-                    other_service_end = other_service_stations[other_service_stations.index(other_service_init) + 1]
-                    A = (self.requested_schedule[other_service][other_service_init][1],
-                        self.line_stations[other_service_init])
-                    B =(self.requested_schedule[other_service][other_service_end][0],
-                        self.line_stations[other_service_end])
-
-                    line_other = get_x_line_equation(A, B)
-                    other_departure_time = line_other(self.line_stations[departure_station])
-                    other_arrival_time = line_other(self.line_stations[arrival_station])
-
-                    dt_gap = other_departure_time - departure_time
-                    at_gap = other_arrival_time - arrival_time
-
-                    if same_sign(dt_gap, at_gap) and all(abs(t) >= self.safe_headway for t in (dt_gap, at_gap)):
+                    if not stations_between:
                         continue
                     else:
-                        conflict_matrix[i, j] = True
-                        conflict_matrix[j, i] = True
+                        # Get set of trips of other_service that could make a conflict with service
+                        trips = []
+                        for s in stations_between:
+                            idx = other_service_stations.index(s)
+                            if 0 < idx < len(other_service_stations) - 1:
+                                trips.append((other_service_stations[idx - 1], s))
+                                trips.append((s, other_service_stations[idx + 1]))
 
+                    for trip in trips:
+                        other_service_init, other_service_end = trip
+                        # print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
+                        A = (self.requested_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
+                        B = (self.requested_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
+
+                        line_other = get_x_line_equation(A, B)
+                        other_departure_time = line_other(self.line_stations[departure_station])
+                        other_arrival_time = line_other(self.line_stations[arrival_station])
+
+                        dt_gap = other_departure_time - departure_time
+                        at_gap = other_arrival_time - arrival_time
+
+                        same_sign = lambda x, y: x * y > 0
+                        if same_sign(dt_gap, at_gap) and all(abs(t) >= self.safe_headway for t in (dt_gap, at_gap)):
+                            continue
+                        else:
+                            conflict_matrix[i, j] = True
+                            conflict_matrix[j, i] = True
         return conflict_matrix
 
     def _travel_times_feasibility(self, S_i: np.array) -> bool:

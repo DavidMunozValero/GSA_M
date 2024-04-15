@@ -8,7 +8,7 @@ import tqdm
 
 from benchmarks.generator import get_revenue_behaviour
 from benchmarks.robin_railway import RevenueMaximization
-from benchmarks.utils import sns_line_plot, int_input, get_schedule_from_supply, TrainSchedulePlotter
+from benchmarks.utils import sns_line_plot, int_input, get_schedule_from_supply, TrainSchedulePlotter, infer_line_stations
 from src.entities import GSA, Solution
 
 from robin.kernel.entities import Kernel
@@ -57,14 +57,15 @@ class RailwayMarketDynamics:
         global_train_hist = pd.DataFrame()
         runs_best_solution_history = {}
         supply = Supply.from_yaml(self.supply_config_file)
-
         requested_schedule = get_schedule_from_supply(self.supply_config_file)
         revenue_behaviour = get_revenue_behaviour(requested_schedule)
-        line = {station.id: station.coords for station in supply.lines[0].stations}
+        lines = supply.lines
+        line = infer_line_stations(lines)
         plotter = TrainSchedulePlotter(requested_schedule, line)
         print(requested_schedule)
         print(line)
         plotter.plot(save_path=Path('../figures/requested_schedule.pdf'))
+        plotter.plot_security_gaps()
 
         for r in tqdm(range(1, gsa_runs + 1)):
             sm = RevenueMaximization(requested_schedule=requested_schedule,
@@ -82,7 +83,6 @@ class RailwayMarketDynamics:
             pr = profile.Profile()
             pr.disable()
 
-            start = time.time()
             pr.enable()
             training_history = gsa_algo.optimize(population_size=gsa_population,
                                                  iters=gsa_iters,
@@ -91,8 +91,6 @@ class RailwayMarketDynamics:
                                                  initial_population=sm.get_initial_population(gsa_population),
                                                  verbose=gsa_verbosity)
             pr.disable()
-            print(f"Elapsed time: {round(time.time() - start, 2)} seconds")
-
             pr.dump_stats('profile.pstat')
 
             training_history.insert(0, "Run", r)
@@ -183,8 +181,10 @@ class RailwayMarketDynamics:
             if gsa_solution[1][0].discrete[i]:
                 filtered_services[service] = sm.updated_schedule[service]
 
+        print(filtered_services)
         plotter = TrainSchedulePlotter(filtered_services, line)
         plotter.plot(save_path=Path('../figures/updated.pdf'))
+        plotter.plot_security_gaps()
 
         tt_file_name = f'{self.supply_config_file.stem}_gsa'
         SupplySaver(services).to_yaml(filename=f'{tt_file_name}.yml', save_path=gsa_supply_save_path)

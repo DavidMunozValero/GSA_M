@@ -9,7 +9,7 @@ from typing import Mapping, Tuple
 
 from geopy.distance import geodesic
 from pathlib import Path
-from robin.supply.entities import Supply
+from robin.supply.entities import Supply, Line
 from shapely.geometry.polygon import LinearRing, Polygon
 from descartes import PolygonPatch
 from typing import List, Union
@@ -177,7 +177,7 @@ class TrainSchedulePlotter:
                            ) -> None:
         fig, ax = plt.subplots(figsize=(15, 8))
 
-        min_x = 0
+        min_x = np.inf
         max_x = 0
         for train_id, train_schedule in self.schedule_data.items():
             stops = list(train_schedule.keys())
@@ -213,3 +213,22 @@ class TrainSchedulePlotter:
         if save_path:
             fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
 
+
+def infer_line_stations(lines: List[Line]) -> Mapping[str, Tuple[float, float]]:
+    """
+    Get list of stations that are part of the corridor
+
+    Returns:
+        corridor_stations (List[str]): list of strings with the station ids
+    """
+    # Initialize corridor with max length trip
+    max_len_line = lines.pop(lines.index(max(lines, key=lambda x: len(x.stations))))
+    line_stations = list([sta for sta in max_len_line.stations])
+
+    # Complete line with other stations that are not in the initial line
+    for line in lines:
+        for i, station in enumerate(line.stations):
+            if station not in line_stations:
+                line_stations.insert(line_stations.index(line.stations[i + 1]), station)
+
+    return {station.id: station.coords for station in line_stations}
