@@ -8,7 +8,7 @@ import tqdm
 
 from benchmarks.generator import get_revenue_behaviour
 from benchmarks.robin_railway import RevenueMaximization
-from benchmarks.utils import sns_line_plot, int_input, get_schedule_from_supply, TrainSchedulePlotter, infer_line_stations
+from benchmarks.utils import sns_line_plot, int_input, get_schedule_from_supply, TrainSchedulePlotter, infer_line_stations, get_services_by_tsp_df
 from src.entities import GSA, Solution
 
 from robin.kernel.entities import Kernel
@@ -57,6 +57,9 @@ class RailwayMarketDynamics:
         global_train_hist = pd.DataFrame()
         runs_best_solution_history = {}
         supply = Supply.from_yaml(self.supply_config_file)
+        tsp_df = get_services_by_tsp_df(supply.services)
+        display(tsp_df)
+
         requested_schedule = get_schedule_from_supply(self.supply_config_file)
         revenue_behaviour = get_revenue_behaviour(requested_schedule)
         lines = supply.lines
@@ -68,6 +71,7 @@ class RailwayMarketDynamics:
         plotter.plot_security_gaps()
 
         for r in tqdm(range(1, gsa_runs + 1)):
+            print(f"Run {r}")
             sm = RevenueMaximization(requested_schedule=requested_schedule,
                                      revenue_behaviour=revenue_behaviour,
                                      line=line,
@@ -80,18 +84,18 @@ class RailwayMarketDynamics:
                            d_dim=0,
                            boundaries=sm.boundaries)
 
-            pr = profile.Profile()
-            pr.disable()
+            #pr = profile.Profile()
+            #pr.disable()
 
-            pr.enable()
+            #pr.enable()
             training_history = gsa_algo.optimize(population_size=gsa_population,
                                                  iters=gsa_iters,
                                                  chaotic_constant=gsa_chaotic,
                                                  repair_solution=True,
                                                  initial_population=sm.get_initial_population(gsa_population),
                                                  verbose=gsa_verbosity)
-            pr.disable()
-            pr.dump_stats('profile.pstat')
+            #pr.disable()
+            #pr.dump_stats('profile.pstat')
 
             training_history.insert(0, "Run", r)
             training_history['Discrete'] = [sm.best_solution.discrete for _ in range(len(training_history))]
