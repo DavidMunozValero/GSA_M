@@ -9,7 +9,7 @@ from typing import Mapping, Tuple
 
 from geopy.distance import geodesic
 from pathlib import Path
-from robin.supply.entities import Supply, Line
+from robin.supply.entities import Line, Service, Supply
 from shapely.geometry.polygon import LinearRing, Polygon
 from descartes import PolygonPatch
 from typing import List, Union
@@ -232,3 +232,24 @@ def infer_line_stations(lines: List[Line]) -> Mapping[str, Tuple[float, float]]:
                 line_stations.insert(line_stations.index(line.stations[i + 1]), station)
 
     return {station.id: station.coords for station in line_stations}
+
+
+def get_services_by_tsp_df(services: List[Service]) -> pd.DataFrame:
+    """
+    Get the number of services by TSP.
+
+    Args:
+        services: List of services.
+
+    Returns:
+        pd.DataFrame: DataFrame with the number of services by TSP.
+    """
+    services = {service.id: service for service in services}
+    services_by_tsp = {}
+    for service in services:
+        if services[service].tsp.name not in services_by_tsp:
+            services_by_tsp[services[service].tsp.name] = 1
+        else:
+            services_by_tsp[services[service].tsp.name] += 1
+
+    return pd.DataFrame.from_dict(services_by_tsp, orient='index', columns=['Number of Services'])
