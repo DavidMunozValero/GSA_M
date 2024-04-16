@@ -47,7 +47,6 @@ class RevenueMaximization:
         self.updated_schedule = deepcopy(self.requested_schedule)
         self.boundaries = self._calculate_boundaries()
         self.conflict_matrix = self._get_conflict_matrix()
-        print(self.conflict_matrix)
         self.best_revenue = -np.inf
         self.best_solution = None
         self.feasible_schedules = []
@@ -220,6 +219,9 @@ class RevenueMaximization:
                 for j, other_service in enumerate(self.requested_schedule):
                     # print(f"\t\tOther Service: {other_service} - {j}")
                     if other_service == service or conflict_matrix[i, j]:
+                        continue
+
+                    if tuple(self.requested_schedule[other_service].values())[0][1] > arrival_time:
                         continue
                     other_service_stations = tuple(self.requested_schedule[other_service].keys())
 
