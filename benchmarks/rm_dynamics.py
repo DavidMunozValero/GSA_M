@@ -65,13 +65,10 @@ class RailwayMarketDynamics:
         lines = supply.lines
         line = infer_line_stations(lines)
         plotter = TrainSchedulePlotter(requested_schedule, line)
-        print(requested_schedule)
-        print(line)
         plotter.plot(save_path=Path('../figures/requested_schedule.pdf'))
         plotter.plot_security_gaps()
 
         for r in tqdm(range(1, gsa_runs + 1)):
-            print(f"Run {r}")
             sm = RevenueMaximization(requested_schedule=requested_schedule,
                                      revenue_behaviour=revenue_behaviour,
                                      line=line,
@@ -104,16 +101,14 @@ class RailwayMarketDynamics:
             runs_best_solution_history[r] = (sm.best_solution, sm.best_revenue)
 
         # Table with results by run
-        dtypes = {'Run': np.int_,
-                  'Revenue': np.float64,
-                  'Execution Time (s.)': np.float64,
-                  'Scheduled Trains': np.int_,
-                  'Delta DT (min.)': np.float64,
-                  'Delta TT (min.)': np.float64}
+        service_tsps = {service.id: service.tsp.name for service in supply.services}
+        columns = ['Run', 'Revenue', 'Execution Time (s.)', 'Scheduled Trains', 'Delta DT (min.)', 'Delta TT (min.)']
+        columns += set(service_tsps.values())
 
-        summary_df = pd.DataFrame(columns=list(dtypes.keys()))
+        summary_df = pd.DataFrame(columns=columns)
 
         run_grouped_df = global_train_hist.groupby('Run')
+
         for group in run_grouped_df.groups:
             run = run_grouped_df.get_group(group)['Run'].iloc[-1]
             revenue = run_grouped_df.get_group(group)['Fitness'].iloc[-1]
@@ -124,6 +119,7 @@ class RailwayMarketDynamics:
             sm.update_schedule(Solution(real=real_solution, discrete=scheduled_trains))
             delta_dt = 0.0
             delta_tt = 0.0
+            services_by_tsp = {tsp: 0 for tsp in service_tsps.values()}
             for i, service in enumerate(sm.requested_schedule):
                 if not scheduled_trains_array[i]:
                     continue
@@ -135,13 +131,17 @@ class RailwayMarketDynamics:
                         continue
                     delta_tt += abs(sm.updated_schedule[service][stop][1] - sm.requested_schedule[service][stop][1])
 
-            summary_df.loc[len(summary_df)] = [run, revenue, execution_time, scheduled_trains, delta_dt, delta_tt]
+                service_tsp = service_tsps[service]
+                services_by_tsp[service_tsp] += 1
+
+            percentages_by_tsp = {}
+            for tsp in services_by_tsp:
+                percentages_by_tsp[tsp] = f"{np.round(services_by_tsp[tsp] / tsp_df.loc[tsp, 'Number of Services'] * 100,2)} %"
+            row_data =  [run, revenue, execution_time, scheduled_trains, delta_dt, delta_tt, *list(percentages_by_tsp.values())]
+            summary_df.loc[len(summary_df)] = row_data
 
         summary_df = summary_df.sort_values('Revenue', ascending=False)
         display(summary_df)
-
-        for col in dtypes:
-            summary_df[col] = summary_df[col].astype(dtypes[col])
 
         # Global status
         print("Global GSA status:")
