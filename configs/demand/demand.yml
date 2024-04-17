@@ -23,10 +23,11 @@ userPattern:
   - id: 1
     name: Business
     rules:
-      R0: IF (price is expensive) THEN 20.0
+      R0: IF (seat is Premium) THEN 20.0
       R1: IF (origin is very_near) & (destination is very_near) THEN 16.0
-      R2: IF (origin is very_near) & (destination is very_near) THEN 24.0
-      R3: IF (origin is very_near) & (destination is very_near) & (departure_time is in_time) & (arrival_time is in_time) THEN 40.0
+      R2: IF (departure_time is in_time) & (arrival_time is in_time) THEN 24.0
+      R3: IF (origin is very_near) & (destination is very_near) & (departure_time is in_time) & (arrival_time is in_time) THEN 20.0
+      R4: IF ((tsp is AVE) | (tsp is AVLO)) THEN 20.0
     variables:
       - name: origin
         type: fuzzy
@@ -69,12 +70,11 @@ userPattern:
         medium: [25, 35, 55, 65]
         expensive: [55, 65, 100, 100]
       - name: seat
-        type: fuzzy
-        support: [ 0, 100 ]
-        sets: [ basic, tourist, premium ]
-        basic: [ 0, 0, 15, 25 ]
-        tourist: [ 15, 25, 45, 55 ]
-        premium: [ 45, 55, 100, 100 ]
+        type: categorical
+        labels: [ Turista, TuristaPlus, Premium ]
+      - name: tsp
+        type: categorical
+        labels: [AVE, AVLO, OUIGO, IRYO]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 8
@@ -96,6 +96,8 @@ userPattern:
     train_service_providers:
       - id: 1
         utility: 2
+    early_stop: 0.3
+    utility_threshold: 40
     error: norm
     error_kwargs:
       loc: 2
@@ -103,9 +105,9 @@ userPattern:
   - id: 2
     name: Student
     rules:
-      R0: IF (price is very_cheap) THEN 70.0
+      R0: IF ((price is very_cheap) | (price is cheap)) THEN 60.0
       R1: IF (origin is very_near) & (destination is very_near) THEN 22.5
-      R2: IF (origin is very_near) & (destination is very_near) & (departure_time is in_time) & (arrival_time is in_time) THEN 7.5
+      R2: IF (origin is very_near) & (destination is very_near) & (departure_time is in_time) & (arrival_time is in_time) THEN 17.5
     variables:
       - name: origin
         type: fuzzy
@@ -148,12 +150,11 @@ userPattern:
         medium: [ 25, 35, 55, 65 ]
         expensive: [ 55, 65, 100, 100 ]
       - name: seat
-        type: fuzzy
-        support: [ 0, 100 ]
-        sets: [ basic, tourist, premium ]
-        basic: [ 0, 0, 15, 25 ]
-        tourist: [ 15, 25, 45, 55 ]
-        premium: [ 45, 55, 100, 100 ]
+        type: categorical
+        labels: [ Turista, TuristaPlus, Premium ]
+      - name: tsp
+        type: categorical
+        labels: [AVE, AVLO, OUIGO, IRYO]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 18
@@ -175,6 +176,8 @@ userPattern:
     train_service_providers:
       - id: 1
         utility: 1
+    early_stop: 0.2
+    utility_threshold: 40
     error: norm
     error_kwargs:
       loc: 1
@@ -182,9 +185,10 @@ userPattern:
   - id: 3
     name: Tourist
     rules:
-      R0: IF (seat is tourist) THEN 30.0
-      R1: IF (origin is very_near) & (destination is very_near) THEN 40.0
-      R2: IF (departure_time is close) & (arrival_time is close) THEN 30.0
+      R0: IF (seat is Turista) THEN 20.0
+      R1: IF (origin is very_near) & ((destination is very_near) | (destination is mid_range)) THEN 30.0
+      R2: IF ((departure_time is in_time) | (departure_time is close) | (departure_time is remote)) & ((arrival_time is in_time) | (arrival_time is close) | (arrival_time is remote)) THEN 30.0
+      R3: IF ((price is very_cheap) | (price is cheap)) THEN 20.0
     variables:
       - name: origin
         type: fuzzy
@@ -227,12 +231,11 @@ userPattern:
         medium: [ 25, 35, 55, 65 ]
         expensive: [ 55, 65, 100, 100 ]
       - name: seat
-        type: fuzzy
-        support: [ 0, 100 ]
-        sets: [ basic, tourist, premium ]
-        basic: [ 0, 0, 15, 25 ]
-        tourist: [ 15, 25, 45, 55 ]
-        premium: [ 45, 55, 100, 100 ]
+        type: categorical
+        labels: [ Turista, TuristaPlus, Premium ]
+      - name: tsp
+        type: categorical
+        labels: [AVE, AVLO, OUIGO, IRYO]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 14
@@ -254,6 +257,8 @@ userPattern:
     train_service_providers:
       - id: 1
         utility: 3
+    early_stop: 0.1
+    utility_threshold: 40
     error: norm
     error_kwargs:
       loc: 2.5
