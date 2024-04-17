@@ -68,7 +68,7 @@ seat:
   hard_type: 1
   soft_type: 1
 - id: '2'
-  name: 'Turista Plus'
+  name: 'TuristaPlus'
   hard_type: 1
   soft_type: 2
 - id: '3'
@@ -157,13 +157,13 @@ rollingStock:
     quantity: 50
 trainServiceProvider:
 - id: '1'
-  name: 'Renfe AVE'
+  name: 'AVE'
   rolling_stock:
   - '11'
   - '12'
   - '13'
 - id: '2'
-  name: 'Renfe AVLO'
+  name: 'AVLO'
   rolling_stock:
   - '21'
   - '22'
