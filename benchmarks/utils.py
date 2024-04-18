@@ -8,6 +8,7 @@ import seaborn as sns
 from typing import Mapping, Tuple
 
 from geopy.distance import geodesic
+from matplotlib.ticker import FuncFormatter, MultipleLocator
 from pathlib import Path
 from robin.supply.entities import Line, Service, Supply
 from shapely.geometry.polygon import LinearRing, Polygon
@@ -148,28 +149,83 @@ class TrainSchedulePlotter:
         self.line = line
         self.station_positions = get_stations_positions(line, scale=1000)
 
+    def minutes_to_hhmm(self, minutes: int, pos) -> str:
+        hours = int(minutes // 60)
+        minutes = int(minutes % 60)
+        hours = str(hours).zfill(2)
+        minutes = str(minutes).zfill(2)
+        label = f'{hours}:{minutes} h.'
+        return label
+
+    def round_to_nearest_half_hour(self, minutes, round_down=True):
+        hours = minutes // 60
+        remainder_minutes = minutes % 60
+
+        if round_down:
+            if remainder_minutes < 30:
+                rounded_minutes = 0
+            else:
+                rounded_minutes = 30
+        else:
+            if remainder_minutes >= 30:
+                rounded_minutes = 30
+            else:
+                hours += 1
+                rounded_minutes = 0
+
+        total_rounded_minutes = hours * 60 + rounded_minutes
+        return total_rounded_minutes
+
     def plot(self, save_path: Union[Path, None] = None) -> None:
         fig, ax = plt.subplots(figsize=(15, 8))
 
+        min_x = 24 * 60
+        max_x = 0
         for train_id, stations in self.schedule_data.items():
             times = [time for station, (arrival, departure) in stations.items() for time in (arrival, departure)]
+            if min(times) < min_x:
+                min_x = min(times)
+            if max(times) > max_x:
+                max_x = max(times)
             station_indices = [self.station_positions[station] for station in stations.keys() for _ in range(2)]
             ax.plot(times, station_indices, marker='o', label=train_id)
 
+        ax.spines['top'].set_visible(True)
+        ax.spines['right'].set_visible(True)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+
+        ax.spines['top'].set_linewidth(1.0)
+        ax.spines['right'].set_linewidth(1.0)
+        ax.spines['bottom'].set_linewidth(1.0)
+        ax.spines['left'].set_linewidth(1.0)
+
+        ax.spines['top'].set_color('#A9A9A9')
+        ax.spines['right'].set_color('#A9A9A9')
+        ax.spines['bottom'].set_color('#A9A9A9')
+        ax.spines['left'].set_color('#A9A9A9')
+
         ax.set_yticks(tuple(self.station_positions.values()))
-        ax.set_yticklabels(self.station_positions.keys())
+        ax.set_yticklabels(self.station_positions.keys(), fontsize=14)
 
         ax.grid(True)
-        ax.set_title('Train schedule', fontweight='bold')
-        ax.set_xlabel('Minutes')
-        ax.set_ylabel('Stations')
-        # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
+        ax.set_xlim(self.round_to_nearest_half_hour(min_x - 10),
+                    self.round_to_nearest_half_hour(max_x + 10, round_down=False))
+        ax.set_title('Malla de horarios', fontweight='bold', fontsize=18)
+        ax.set_xlabel('Tiempo (HH:MM)', fontsize=16)
+        ax.set_ylabel('Estaciones', fontsize=16)
+
+        ax.tick_params(axis='x', labelsize=14)
+        ax.xaxis.set_major_locator(MultipleLocator(30))
+        formatter = FuncFormatter(self.minutes_to_hhmm)
+        ax.xaxis.set_major_formatter(formatter)
 
         plt.tight_layout()
         plt.show()
 
         if save_path:
-            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
     def plot_security_gaps(self,
                            security_gap: int = 10,
