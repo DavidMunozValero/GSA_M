@@ -85,7 +85,7 @@ def sns_line_plot(df: pd.DataFrame,
 
     plt.show()
     if save_path:
-        fig.savefig(save_path, format='svg', dpi=300, bbox_inches='tight', transparent=True)
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 
 def int_input(prompt: str) -> int:
