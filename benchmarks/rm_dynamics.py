@@ -175,7 +175,8 @@ class RailwayMarketDynamics:
                       y_data="Fitness",
                       title="GSA Convergence",
                       x_label="Iteration",
-                      y_label="Fitness (Revenue)")
+                      y_label="Fitness (Revenue)",
+                      save_path=Path('../figures/gsa_convergence.pdf'))
 
         services = sm.update_supply(path=self.supply_config_file,
                                     solution=gsa_solution[1][0])
@@ -204,6 +205,6 @@ class RailwayMarketDynamics:
                                        path_config_supply=self.supply_config_file)
 
         kernel_plotter.plotter_data_analysis()
-        kernel_plotter.plot_users_seat_pie_chart()
+        kernel_plotter.plot_users_seat_pie_chart(save_path='../figures/users_seat_pie_chart.pdf')
 
         return services
