@@ -149,6 +149,11 @@ class TrainSchedulePlotter:
         self.line = line
         self.station_positions = get_stations_positions(line, scale=1000)
 
+    def get_default_color_cycle(self):
+        color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        color_list = list(color_cycle)
+        return color_list
+
     def minutes_to_hhmm(self, minutes: int, pos) -> str:
         hours = int(minutes // 60)
         minutes = int(minutes % 60)
@@ -190,20 +195,10 @@ class TrainSchedulePlotter:
             station_indices = [self.station_positions[station] for station in stations.keys() for _ in range(2)]
             ax.plot(times, station_indices, marker='o', label=train_id)
 
-        ax.spines['top'].set_visible(True)
-        ax.spines['right'].set_visible(True)
-        ax.spines['bottom'].set_visible(True)
-        ax.spines['left'].set_visible(True)
-
-        ax.spines['top'].set_linewidth(1.0)
-        ax.spines['right'].set_linewidth(1.0)
-        ax.spines['bottom'].set_linewidth(1.0)
-        ax.spines['left'].set_linewidth(1.0)
-
-        ax.spines['top'].set_color('#A9A9A9')
-        ax.spines['right'].set_color('#A9A9A9')
-        ax.spines['bottom'].set_color('#A9A9A9')
-        ax.spines['left'].set_color('#A9A9A9')
+        for spn in ('top', 'right', 'bottom', 'left'):
+            ax.spines[spn].set_visible(True)
+            ax.spines[spn].set_linewidth(1.0)
+            ax.spines[spn].set_color('#A9A9A9')
 
         ax.set_yticks(tuple(self.station_positions.values()))
         ax.set_yticklabels(self.station_positions.keys(), fontsize=14)
@@ -227,17 +222,18 @@ class TrainSchedulePlotter:
         if save_path:
             fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
-    def plot_security_gaps(self,
-                           security_gap: int = 10,
-                           save_path: Union[Path, None] = None
-                           ) -> None:
+    def plot_security_gaps(self, security_gap: int = 10, save_path: Union[Path, None] = None) -> None:
+        color_list = self.get_default_color_cycle()
+
         fig, ax = plt.subplots(figsize=(15, 8))
 
-        min_x = np.inf
+        min_x = 24 * 60
         max_x = 0
+
+        j = 0
         for train_id, train_schedule in self.schedule_data.items():
             stops = list(train_schedule.keys())
-            for i in range(len(stops) - 1):  # Iterate trips
+            for i in range(len(stops) - 1):
                 departure_x = train_schedule[stops[i]][1]
                 arrival_x = train_schedule[stops[i + 1]][0]
                 if departure_x < min_x:
@@ -245,29 +241,44 @@ class TrainSchedulePlotter:
                 if arrival_x > max_x:
                     max_x = arrival_x
                 departure_station_y = self.station_positions[stops[i]]
-                arrival_station_y = self.station_positions[stops[i+1]]
+                arrival_station_y = self.station_positions[stops[i + 1]]
                 gap = security_gap // 2
                 vertices = [(departure_x - gap, departure_station_y), (arrival_x - gap, arrival_station_y),
                             (arrival_x + gap, arrival_station_y), (departure_x + gap, departure_station_y)]
                 ring_mixed = Polygon(vertices)
-                ring_patch = PolygonPatch(ring_mixed)
+                ring_patch = PolygonPatch(ring_mixed, facecolor=color_list[j], edgecolor=color_list[j], alpha=0.6)
                 ax.add_patch(ring_patch)
+            j += 1
 
-        ax.set_xlim(min_x - security_gap, max_x + security_gap)
+        for spn in ('top', 'right', 'bottom', 'left'):
+            ax.spines[spn].set_visible(True)
+            ax.spines[spn].set_linewidth(1.0)
+            ax.spines[spn].set_color('#A9A9A9')
+
+        ax.set_ylim(min(self.station_positions.values()) - 50, max(self.station_positions.values()) + 50)
         ax.set_yticks(tuple(self.station_positions.values()))
-        ax.set_yticklabels(self.station_positions.keys())
+        ax.set_yticklabels(self.station_positions.keys(), fontsize=14)
 
         ax.grid(True)
-        ax.set_title('Train schedule', fontweight='bold')
-        ax.set_xlabel('Minutes')
-        ax.set_ylabel('Stations')
-        # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+        ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
+        ax.set_xlim(self.round_to_nearest_half_hour(min_x - 10),
+                    self.round_to_nearest_half_hour(max_x + 10, round_down=False))
+        ax.set_title(f'Malla de horarios con áreas de seguridad de {security_gap} minutos',
+                     fontweight='bold',
+                     fontsize=18)
+        ax.set_xlabel('Tiempo (HH:MM)', fontsize=16)
+        ax.set_ylabel('Estaciones', fontsize=16)
+
+        ax.tick_params(axis='x', labelsize=14)
+        ax.xaxis.set_major_locator(MultipleLocator(30))
+        formatter = FuncFormatter(self.minutes_to_hhmm)
+        ax.xaxis.set_major_formatter(formatter)
 
         plt.tight_layout()
         plt.show()
 
         if save_path:
-            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+            fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 
 def infer_line_stations(lines: List[Line]) -> Mapping[str, Tuple[float, float]]:
