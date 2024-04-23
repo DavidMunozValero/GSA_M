@@ -33,6 +33,13 @@ time_slots:
       22: 0.03
       23: 0.02
 
+tsps:
+  probabilities:
+    '1': 0.25
+    '2': 0.25
+    '3': 0.3
+    '4': 0.2
+
 # Prices config
 prices:
   base: 10  # Base price
@@ -41,8 +48,8 @@ prices:
   tsp_factor:  # Defines how the TSP affects the price (multiplies each price by the factor)
       '1': 1.5  # Renfe AVE
       '2': 1.1  # Renfe AVLO
-      '3': 1  # Ouigo
-      '4': 0.9  # Iryo
+      '3': 1  # Iryo
+      '4': 0.5  # Ouigo
   seat_type_factor:  # Defines how the seat type affects the price (multiplies each price by the factor)
       '1': 1  # Tourist Class
       '2': 1.2 # Tourist Plus Class
