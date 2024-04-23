@@ -168,15 +168,15 @@ trainServiceProvider:
   - '21'
   - '22'
 - id: '3'
-  name: 'OUIGO'
-  rolling_stock:
-  - '31'
-  - '32'
-- id: '4'
   name: 'IRYO'
   rolling_stock:
   - '41'
   - '42'
+- id: '4'
+  name: 'OUIGO'
+  rolling_stock:
+  - '31'
+  - '32'
 line:
 - id: '03612'
   name: 'MAD - BCN'
