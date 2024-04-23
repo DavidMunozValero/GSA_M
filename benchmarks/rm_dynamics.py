@@ -66,7 +66,6 @@ class RailwayMarketDynamics:
         line = infer_line_stations(lines)
         plotter = TrainSchedulePlotter(requested_schedule, line)
         plotter.plot(save_path=Path('../figures/requested_schedule.pdf'))
-        plotter.plot_security_gaps()
 
         for r in tqdm(range(1, gsa_runs + 1)):
             sm = RevenueMaximization(requested_schedule=requested_schedule,
@@ -189,7 +188,6 @@ class RailwayMarketDynamics:
         print(filtered_services)
         plotter = TrainSchedulePlotter(filtered_services, line)
         plotter.plot(save_path=Path('../figures/updated.pdf'))
-        plotter.plot_security_gaps()
 
         tt_file_name = f'{self.supply_config_file.stem}_gsa'
         SupplySaver(services).to_yaml(filename=f'{tt_file_name}.yml', save_path=gsa_supply_save_path)
