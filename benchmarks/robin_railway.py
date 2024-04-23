@@ -81,7 +81,8 @@ class RevenueMaximization:
             time_slot_id = f'{start_time.seconds}'
 
             updated_time_slot = TimeSlot(time_slot_id, service.time_slot.start, service.time_slot.end)
-            updated_service = build_service(date=date,
+            updated_service = build_service(id_=service.id,
+                                            date=date,
                                             line=updated_line,
                                             time_slot=updated_time_slot,
                                             tsp=service.tsp,
