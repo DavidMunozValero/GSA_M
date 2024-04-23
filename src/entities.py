@@ -136,6 +136,8 @@ class GSA:
 
         self.boundaries = boundaries
 
+        self.population_history = pd.DataFrame()
+
         self.objective_function_name = self.objective_function.__name__
         self.solution_history = None
         self.accuracy_history = None
@@ -199,6 +201,7 @@ class GSA:
                  initial_population: Union[None, List[Solution]] = None,
                  w_max: float = 20.0,
                  w_min: float = 1e-10,
+                 save_population: bool = False,
                  verbose: bool = True
                  ) -> pd.DataFrame:
         """
@@ -214,6 +217,7 @@ class GSA:
             initial_population (Union[None, Mapping[str, np.ndarray]]): Initial population
             w_max (float): Maximum value of the chaotic term
             w_min (float): Minimum value of the chaotic term
+            save_population (bool): True if the population should be saved, False otherwise
             verbose (bool): True if the optimization process should be displayed, False otherwise
 
         Returns:
@@ -241,6 +245,11 @@ class GSA:
 
         timer_start = time.time()
         self.start_time = time.strftime("%Y-%m-%d-%H-%M-%S")
+
+        if save_population:
+            population_colums = [f'real_{i}' for i in range(population_size)] + [f'discrete_{i}' for i in range(population_size)]
+            population_colums.insert(0, 'Iteration')
+            self.population_history = pd.DataFrame(columns=population_colums)
 
         columns = ['Iteration', 'Fitness', 'Accuracy', 'ExecutionTime', 'Discrete', 'Real']
         history = pd.DataFrame(columns=columns)
@@ -290,6 +299,10 @@ class GSA:
 
             convergence_curve[current_iter] = g_best_score
             best_solution_history.append(g_best)
+
+            if save_population:
+                population_row = [current_iter, *[p.real for p in pos], *[p.discrete for p in pos]]
+                self.population_history.loc[len(self.population_history)] = population_row
 
             if verbose:
                 print(['At iteration ' + str(current_iter + 1) + ' the best fitness is ' + str(g_best_score)])
