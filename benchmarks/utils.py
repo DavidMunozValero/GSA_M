@@ -57,6 +57,30 @@ def is_better_solution(rus_revenue: Mapping[str, float],
     return False
 
 
+def sns_box_plot(df: pd.DataFrame,
+                 title: str,
+                 x_label: str,
+                 y_label: str,
+                 save_path: Union[Path, None] = None,
+                 fig_size: tuple = (10, 6)
+                 ) -> None:
+    fig, ax = plt.subplots(figsize=fig_size)
+
+    ax.set_title(title, fontweight='bold')
+    # ax.set_xlim(min(df[x_data]), max(df[x_data]))
+    # ax.set_ylim(min(df[y_data]), max(df[y_data]))
+
+    sns.boxplot(data=df)
+    ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
+
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+    plt.show()
+    if save_path:
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+
+
 def sns_line_plot(df: pd.DataFrame,
                   x_data: str,
                   y_data: str,
@@ -203,7 +227,7 @@ class TrainSchedulePlotter:
             station_indices = [self.station_positions[station] for station in stations.keys() for _ in range(2)]
             ax.plot(times,
                     station_indices,
-                    color=color_list[color_idx],
+                    color=color_list[color_idx % len(color_list)],
                     marker='o',
                     label=train_id)
 
@@ -246,9 +270,10 @@ class TrainSchedulePlotter:
         ax.set_xlabel('Tiempo (HH:MM)', fontsize=18)
         ax.set_ylabel('Estaciones', fontsize=18)
 
-        ax.xaxis.set_major_locator(MultipleLocator(30))
+        ax.xaxis.set_major_locator(MultipleLocator(90))
         formatter = FuncFormatter(self.minutes_to_hhmm)
         ax.xaxis.set_major_formatter(formatter)
+        plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right')
 
         plt.tight_layout()
         plt.show()
