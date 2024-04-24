@@ -58,9 +58,12 @@ def is_better_solution(rus_revenue: Mapping[str, float],
 
 
 def sns_box_plot(df: pd.DataFrame,
+                 x_data: str,
+                    y_data: str,
                  title: str,
                  x_label: str,
                  y_label: str,
+                 hue: Union[str, None] = None,
                  save_path: Union[Path, None] = None,
                  fig_size: tuple = (10, 6)
                  ) -> None:
@@ -70,7 +73,8 @@ def sns_box_plot(df: pd.DataFrame,
     # ax.set_xlim(min(df[x_data]), max(df[x_data]))
     # ax.set_ylim(min(df[y_data]), max(df[y_data]))
 
-    sns.boxplot(data=df)
+    sns.boxplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, zorder=1, boxprops=dict(alpha=.3))
+    sns.stripplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, alpha=0.5, zorder=1)
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
 
     ax.set_xlabel(x_label)
@@ -87,6 +91,7 @@ def sns_line_plot(df: pd.DataFrame,
                   title: str,
                   x_label: str,
                   y_label: str,
+                  hue: Union[str, None] = None,
                   save_path: Union[Path, None] = None,
                   fig_size: tuple = (10, 6)
                   ) -> None:
@@ -100,6 +105,7 @@ def sns_line_plot(df: pd.DataFrame,
                  data=df,
                  x=x_data,
                  y=y_data,
+                 hue=hue,
                  legend=True)
 
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
@@ -109,7 +115,7 @@ def sns_line_plot(df: pd.DataFrame,
 
     plt.show()
     if save_path:
-        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
 
 
 def int_input(prompt: str) -> int:
@@ -320,4 +326,7 @@ def get_services_by_tsp_df(services: List[Service]) -> pd.DataFrame:
         else:
             services_by_tsp[services[service].tsp.name] += 1
 
-    return pd.DataFrame.from_dict(services_by_tsp, orient='index', columns=['Number of Services'])
+    # Append row with Total (Sum of "Number of Services" column)
+    services_by_tsp['Total'] = sum(services_by_tsp.values())
+    df = pd.DataFrame.from_dict(services_by_tsp, orient='index', columns=['Number of Services'])
+    return df
