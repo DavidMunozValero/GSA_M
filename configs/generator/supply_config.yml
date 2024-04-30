@@ -178,8 +178,8 @@ trainServiceProvider:
   - '31'
   - '32'
 line:
-- id: '03612'
-  name: 'MAD - BCN'
+- id: '1'
+  name: 'No Stops MAD - BCN'
   corridor: '1'
   stops:
   - station: '60000'
@@ -188,7 +188,7 @@ line:
   - station: '71801'
     arrival_time: 150
     departure_time: 150
-- id: '04161'
+- id: '2'
   name: 'Stops MAD - BCN'
   corridor: '1'
   stops:
@@ -210,7 +210,7 @@ line:
   - station: '71801'
     arrival_time: 192
     departure_time: 192
-- id: '02731'
+- id: '3'
   name: 'Main Stops MAD - BCN'
   corridor: '1'
   stops:
@@ -226,13 +226,13 @@ line:
   - station: '71801'
     arrival_time: 185
     departure_time: 185
-timeSlot:
-- id: '1'
-  start: '7:30:00'
-  end: '7:40:00'
-- id: '2'
-  start: '18:00:00'
-  end: '18:10:00'
-- id: '3'
-  start: '8:30:00'
-  end: '8:40:00'
+- id: '4'
+  name: 'Directo ZAR - BAR'
+  corridor: '1'
+  stops:
+  - station: '04040'
+    arrival_time: 0
+    departure_time: 0
+  - station: '71801'
+    arrival_time: 110
+    departure_time: 110
