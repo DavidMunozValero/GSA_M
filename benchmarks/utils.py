@@ -253,8 +253,8 @@ class TrainSchedulePlotter:
                                 (arrival_x + gap, arrival_station_y), (departure_x + gap, departure_station_y)]
                     ring_mixed = Polygon(vertices)
                     ring_patch = PolygonPatch(ring_mixed,
-                                              facecolor=color_list[color_idx],
-                                              edgecolor=color_list[color_idx],
+                                              facecolor=color_list[color_idx % len(color_list)],
+                                              edgecolor=color_list[color_idx % len(color_list)],
                                               alpha=0.6)
                     ax.add_patch(ring_patch)
             color_idx += 1

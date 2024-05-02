@@ -148,7 +148,7 @@ class RevenueMaximization:
             bool: True if the departure time is feasible, False otherwise
         """
         S_i = np.array(S_i, dtype=np.bool_)
-        if not np.any((S_i * self.conflict_matrix)[S_i]):
+        if not np.any((S_i * self.conflict_matrix).T[S_i]):
             return True
         return False
 
@@ -220,9 +220,11 @@ class RevenueMaximization:
                 for j, other_service in enumerate(self.requested_schedule):
                     # print(f"\t\tOther Service: {other_service} - {j}")
                     if other_service == service or conflict_matrix[i, j]:
+                        # print("Skip 1")
                         continue
 
                     if tuple(self.requested_schedule[other_service].values())[0][1] > arrival_time:
+                        # print("Skip 2")
                         continue
                     other_service_stations = tuple(self.requested_schedule[other_service].keys())
 
@@ -232,16 +234,21 @@ class RevenueMaximization:
                             stations_between.append(s)
 
                     if not stations_between:
+                        # print("Skip 3")
                         continue
                     else:
+                        # print(f"\t\t\tStations Between: {stations_between}")
                         # Get set of trips of other_service that could make a conflict with service
-                        trips = []
+                        trips = set()
                         for s in stations_between:
                             idx = other_service_stations.index(s)
                             if 0 < idx < len(other_service_stations) - 1:
-                                trips.append((other_service_stations[idx - 1], s))
-                                trips.append((s, other_service_stations[idx + 1]))
+                                trips.add((other_service_stations[idx - 1], s))
+                                trips.add((s, other_service_stations[idx + 1]))
+                            elif idx == 0:
+                                trips.add((s, other_service_stations[idx + 1]))
 
+                    # print(f"\t\t\tTrips to test: {trips}")
                     for trip in trips:
                         other_service_init, other_service_end = trip
                         # print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
@@ -261,6 +268,14 @@ class RevenueMaximization:
                         else:
                             conflict_matrix[i, j] = True
                             conflict_matrix[j, i] = True
+
+        # print(conflict_matrix)
+        """
+        for f in range(len(conflict_matrix)):
+            for c in range(len(conflict_matrix[f])):
+                if conflict_matrix[f][c]:
+                    print(f"Conflict {f}, {c}")
+        """
         return conflict_matrix
 
     def _travel_times_feasibility(self, S_i: np.array) -> bool:
@@ -350,7 +365,7 @@ class RevenueMaximization:
             3.3) Update conflicts dictionary by removing services that have conflict with service 's'
                  (including 's')
         """
-        self.update_schedule(timetable)
+        # self.update_schedule(timetable)
         default_planner = np.array([(~cm).all() for cm in self.conflict_matrix], dtype=np.bool_)
         conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
         conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
@@ -383,6 +398,7 @@ class RevenueMaximization:
         Returns:
             Tuple[float, int]: fitness and accuracy (0)
         """
+        self.update_schedule(timetable)
         if not heuristic_schedule:
             schedule = self.get_best_schedule(timetable)
         else:
@@ -544,6 +560,7 @@ class RevenueMaximization:
 
         dt_feasible = self._departure_time_feasibility(scheduling)
         tt_feasible = self._travel_times_feasibility(scheduling)
+
         if dt_feasible and tt_feasible:
             return True
         return False
@@ -599,7 +616,6 @@ class RevenueMaximization:
                 elif j == len(self.updated_schedule[service]) - 1:
                     arrival_time = departure_times[dt_idx - 1] + self.operational_times[service][ot_idx]
                     departure_time = arrival_time
-                    ot_idx += 2
                 else:
                     arrival_time = departure_times[dt_idx - 1] + self.operational_times[service][ot_idx]
                     departure_time = departure_times[dt_idx]
