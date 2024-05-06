@@ -148,7 +148,7 @@ class RevenueMaximization:
             bool: True if the departure time is feasible, False otherwise
         """
         S_i = np.array(S_i, dtype=np.bool_)
-        if not np.any((S_i * self.conflict_matrix).T[S_i]):
+        if not np.any((S_i * self.conflict_matrix)[S_i]):
             return True
         return False
 
@@ -205,6 +205,7 @@ class RevenueMaximization:
         # print(self.line_stations)
 
         for i, service in enumerate(self.requested_schedule):
+            # print("Service: ", service)
             # print(f"Service: {service} - {i}")
             service_stations = tuple(self.requested_schedule[service].keys())
             for k, station in enumerate(service_stations):
@@ -218,7 +219,7 @@ class RevenueMaximization:
                 arrival_time = self.requested_schedule[service][service_stations[k + 1]][0]
 
                 for j, other_service in enumerate(self.requested_schedule):
-                    # print(f"\t\tOther Service: {other_service} - {j}")
+                    # print("Other service: ", other_service)
                     if other_service == service or conflict_matrix[i, j]:
                         # print("Skip 1")
                         continue
@@ -237,6 +238,7 @@ class RevenueMaximization:
                         # print("Skip 3")
                         continue
                     else:
+                        # print("Stations between: ", stations_between)
                         # print(f"\t\t\tStations Between: {stations_between}")
                         # Get set of trips of other_service that could make a conflict with service
                         trips = set()
@@ -252,8 +254,8 @@ class RevenueMaximization:
                     for trip in trips:
                         other_service_init, other_service_end = trip
                         # print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
-                        A = (self.requested_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
-                        B = (self.requested_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
+                        A = (self.updated_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
+                        B = (self.updated_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
 
                         line_other = get_x_line_equation(A, B)
                         other_departure_time = line_other(self.line_stations[departure_station])
@@ -264,8 +266,10 @@ class RevenueMaximization:
 
                         same_sign = lambda x, y: x * y > 0
                         if same_sign(dt_gap, at_gap) and all(abs(t) >= self.safe_headway for t in (dt_gap, at_gap)):
+                            # print(f"No conflict detected")
                             continue
                         else:
+                            # print(f"Conflict detected")
                             conflict_matrix[i, j] = True
                             conflict_matrix[j, i] = True
 
