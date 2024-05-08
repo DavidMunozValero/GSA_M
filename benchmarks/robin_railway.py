@@ -87,7 +87,8 @@ class RevenueMaximization:
                                             time_slot=updated_time_slot,
                                             tsp=service.tsp,
                                             rs=service.rolling_stock,
-                                            prices=service.prices)
+                                            prices=service.prices,
+                                            build_service_id=False)
 
             services.append(updated_service)
         return services
