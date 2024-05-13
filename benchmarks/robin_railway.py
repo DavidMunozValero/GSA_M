@@ -184,11 +184,10 @@ class RevenueMaximization:
             return lambda y: (y - c) / m
 
         conflict_matrix = np.zeros((len(self.requested_schedule), len(self.requested_schedule)), dtype=np.bool_)
-        # print(self.line_stations)
+        #print(self.line_stations)
 
         for i, service in enumerate(self.requested_schedule):
-            # if i == 12:
-            #    print(f"Service: {service} - {i}")
+            #print(f"Service: {service} - {i}")
             service_stations = tuple(self.requested_schedule[service].keys())
             for k, station in enumerate(service_stations):
                 if k == len(service_stations) - 1:
@@ -196,22 +195,18 @@ class RevenueMaximization:
 
                 departure_station = station
                 arrival_station = service_stations[k + 1]
-                # if i == 12:
-                #    print(f"\tDeparture: {departure_station} - Arrival: {arrival_station}")
+                #print(f"\tDeparture: {departure_station} - Arrival: {arrival_station}")
                 departure_time = self.updated_schedule[service][station][1]
                 arrival_time = self.updated_schedule[service][service_stations[k + 1]][0]
 
                 for j, other_service in enumerate(self.requested_schedule):
-                    # if i == 12 and j == 39:
-                    #    print("Other service: ", other_service)
+                    #print("Other service: ", other_service)
                     if other_service == service or conflict_matrix[i, j]:
-                        # if i == 12 and j == 39:
-                        #    print("Skip 1")
+                        #print("Skip 1")
                         continue
 
                     if tuple(self.requested_schedule[other_service].values())[0][1] > arrival_time:
-                        # if i == 12 and j == 39:
-                        #    print("Skip 2")
+                        #print("Skip 2")
                         continue
                     other_service_stations = tuple(self.requested_schedule[other_service].keys())
 
@@ -221,13 +216,11 @@ class RevenueMaximization:
                             stations_between.append(s)
 
                     if not stations_between:
-                        # if i == 12 and j == 39:
-                        #    print("Skip 3")
+                        #print("Skip 3")
                         continue
                     else:
-                        # if i == 12 and j == 39:
-                        #     print("Stations between: ", stations_between)
-                        #     print(f"\t\t\tStations Between: {stations_between}")
+                        #print("Stations between: ", stations_between)
+                        #print(f"\t\t\tStations Between: {stations_between}")
                         # Get set of trips of other_service that could make a conflict with service
                         trips = set()
                         for s in stations_between:
@@ -238,38 +231,33 @@ class RevenueMaximization:
                             elif idx == 0:
                                 trips.add((s, other_service_stations[idx + 1]))
 
-                    # if i == 12 and j == 39:
-                    #     print(f"\t\t\tTrips to test: {trips}")
+                    #print(f"\t\t\tTrips to test: {trips}")
                     for trip in trips:
                         other_service_init, other_service_end = trip
-                        # if i == 12 and j == 39:
-                        #     print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
+                        #print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
                         A = (self.updated_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
                         B = (self.updated_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
-                        # if i == 12 and j == 39:
-                        #    print(f"A: {A}")
-                        #    print(f"B: {B}")
+                        #print(f"A: {A}")
+                        #print(f"B: {B}")
                         line_other = get_x_line_equation(A, B)
                         other_departure_time = line_other(self.line_stations[departure_station])
                         other_arrival_time = line_other(self.line_stations[arrival_station])
-                        # if i == 12 and j == 39:
-                        #    print(f"Other DT: {other_departure_time}")
-                        #    print(f"Other AT: {other_arrival_time}")
+                        #print(f"Other DT: {other_departure_time}")
+                        #print(f"Other AT: {other_arrival_time}")
 
                         dt_gap = other_departure_time - departure_time
                         at_gap = other_arrival_time - arrival_time
-                        # if i == 12 and j == 39:
-                        #    print(f"DT gap: {A}")
-                        #    print(f"AT gap: {B}")
+                        #print("Sdt: ", departure_time)
+                        #print("Sat: ", arrival_time)
+                        #print(f"DT gap: {dt_gap}")
+                        #print(f"AT gap: {at_gap}")
 
                         same_sign = lambda x, y: x * y > 0
-                        if same_sign(dt_gap, at_gap) and all(abs(t) >= self.safe_headway for t in (dt_gap, at_gap)):
-                            # if i == 12 and j == 39:
-                            #     print(f"No conflict detected")
+                        if same_sign(dt_gap, at_gap) and all(abs(t) >= 2 * self.safe_headway for t in (dt_gap, at_gap)):
+                            # print(f"No conflict detected")
                             continue
                         else:
-                            # if i == 12 and j == 39:
-                            #     print(f"Conflict detected")
+                            # print(f"Conflict detected")
                             conflict_matrix[i, j] = True
                             conflict_matrix[j, i] = True
 
