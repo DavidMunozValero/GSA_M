@@ -1,61 +1,61 @@
 stations:
-- id: '70200'
+- id: 'Guadalajara'
   name: Guadalajara
   city: Guadalajara
   short_name: GUA
   coordinates:
     latitude: 40.6441032
     longitude: -3.1822298
-- id: '71801'
+- id: 'Barcelona'
   name: Barcelona-Sants
   city: Barcelona
   short_name: BAR
   coordinates:
     latitude: 41.37922
     longitude: 2.140624
-- id: '79300'
+- id: 'Girona'
   name: Girona
   city: Girona
   short_name: GIR
   coordinates:
     latitude: 41.979303
     longitude: 2.817006
-- id: '71500'
+- id: 'Tarragona'
   name: Tarragona
   city: Tarragona
   short_name: TAR
   coordinates:
     latitude: 41.111624
     longitude: 1.253214
-- id: '78400'
+- id: 'Lleida'
   name: Lleida
   city: Lleida
   short_name: LLE
   coordinates:
     latitude: 41.620696
     longitude: 0.632669
-- id: '04040'
+- id: 'Zaragoza'
   name: Zaragoza-Delicias
   city: Zaragoza
   short_name: ZAR
   coordinates:
     latitude: 41.658649
     longitude: -0.911615
-- id: '60000'
+- id: 'Madrid'
   name: Madrid-Puerta de Atocha
   city: Madrid
   short_name: MAD
   coordinates:
     latitude: 40.406442
     longitude: -3.690886
-- id: '04307'
+- id: 'Figueres'
   name: Figueres Vilafant
   city: Figueres
   short_name: FIG
   coordinates:
     latitude: 42.264771
     longitude: 2.943547
-- id: '70600'
+- id: 'Calatayud'
   name: Calatayud
   city: Calatayud
   short_name: CAL
@@ -79,23 +79,23 @@ corridor:
 - id: '1'
   name: 'Corredor Noreste'
   stations:
-  - org: '60000'
+  - org: 'Madrid'
     des:
-    - org: '70200'
+    - org: 'Guadalajara'
       des:
-      - org: '70600'
+      - org: 'Calatayud'
         des:
-        - org: '04040'
+        - org: 'Zaragoza'
           des:
-          - org: '78400'
+          - org: 'Lleida'
             des:
-            - org: '71500'
+            - org: 'Tarragona'
               des:
-              - org: '71801'
+              - org: 'Barcelona'
                 des:
-                - org: '79300'
+                - org: 'Girona'
                   des:
-                  - org: '04307'
+                  - org: 'Figueres'
                     des: []
 rollingStock:
 - id: '11'
@@ -182,57 +182,57 @@ line:
   name: 'No Stops MAD - BCN'
   corridor: '1'
   stops:
-  - station: '60000'
+  - station: 'Madrid'
     arrival_time: 0
     departure_time: 0
-  - station: '71801'
+  - station: 'Barcelona'
     arrival_time: 150
     departure_time: 150
 - id: '2'
   name: 'Stops MAD - BCN'
   corridor: '1'
   stops:
-  - station: '60000'
+  - station: 'Madrid'
     arrival_time: 0
     departure_time: 0
-  - station: '70600'
+  - station: 'Calatayud'
     arrival_time: 55
     departure_time: 56
-  - station: '04040'
+  - station: 'Zaragoza'
     arrival_time: 81
     departure_time: 82
-  - station: '78400'
+  - station: 'Lleida'
     arrival_time: 125
     departure_time: 127
-  - station: '71500'
+  - station: 'Tarragona'
     arrival_time: 154
     departure_time: 156
-  - station: '71801'
+  - station: 'Barcelona'
     arrival_time: 192
     departure_time: 192
 - id: '3'
   name: 'Main Stops MAD - BCN'
   corridor: '1'
   stops:
-  - station: '60000'
+  - station: 'Madrid'
     arrival_time: 0
     departure_time: 0
-  - station: '04040'
+  - station: 'Zaragoza'
     arrival_time: 75
     departure_time: 77
-  - station: '71500'
+  - station: 'Tarragona'
     arrival_time: 150
     departure_time: 152
-  - station: '71801'
+  - station: 'Barcelona'
     arrival_time: 185
     departure_time: 185
 - id: '4'
   name: 'Directo ZAR - BAR'
   corridor: '1'
   stops:
-  - station: '04040'
+  - station: 'Zaragoza'
     arrival_time: 0
     departure_time: 0
-  - station: '71801'
+  - station: 'Barcelona'
     arrival_time: 110
     departure_time: 110
