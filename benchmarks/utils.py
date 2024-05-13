@@ -69,7 +69,7 @@ def sns_box_plot(df: pd.DataFrame,
                  ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold')
+    ax.set_title(title, fontweight='bold', fontsize=20)
     # ax.set_xlim(min(df[x_data]), max(df[x_data]))
     # ax.set_ylim(min(df[y_data]), max(df[y_data]))
 
@@ -77,12 +77,18 @@ def sns_box_plot(df: pd.DataFrame,
     sns.stripplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, alpha=0.5, zorder=1)
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
 
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.set_xlabel(x_label, fontsize=16)
+    ax.set_ylabel(y_label, fontsize=16)
+
+    for spn in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spn].set_visible(True)
+        ax.spines[spn].set_linewidth(1.0)
+        ax.spines[spn].set_color('#A9A9A9')
 
     plt.show()
     if save_path:
-        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 
 def sns_line_plot(df: pd.DataFrame,
@@ -97,7 +103,7 @@ def sns_line_plot(df: pd.DataFrame,
                   ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold')
+    ax.set_title(title, fontweight='bold', fontsize=20)
     # ax.set_xlim(min(df[x_data]), max(df[x_data]))
     # ax.set_ylim(min(df[y_data]), max(df[y_data]))
 
@@ -110,12 +116,18 @@ def sns_line_plot(df: pd.DataFrame,
 
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
 
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.set_xlabel(x_label, fontsize=16)
+    ax.set_ylabel(y_label, fontsize=16)
+
+    for spn in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spn].set_visible(True)
+        ax.spines[spn].set_linewidth(1.0)
+        ax.spines[spn].set_color('#A9A9A9')
 
     plt.show()
     if save_path:
-        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=False)
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
 
 
 def int_input(prompt: str) -> int:
@@ -235,6 +247,7 @@ class TrainSchedulePlotter:
                     station_indices,
                     color=color_list[color_idx % len(color_list)],
                     marker='o',
+                    linewidth=2.0,
                     label=train_id)
 
             if plot_security_gaps:
@@ -248,7 +261,7 @@ class TrainSchedulePlotter:
                         max_x = arrival_x
                     departure_station_y = self.station_positions[stops[i]]
                     arrival_station_y = self.station_positions[stops[i + 1]]
-                    gap = security_gap // 2
+                    gap = security_gap
                     vertices = [(departure_x - gap, departure_station_y), (arrival_x - gap, arrival_station_y),
                                 (arrival_x + gap, arrival_station_y), (departure_x + gap, departure_station_y)]
                     ring_mixed = Polygon(vertices)
@@ -264,22 +277,22 @@ class TrainSchedulePlotter:
             ax.spines[spn].set_linewidth(1.0)
             ax.spines[spn].set_color('#A9A9A9')
 
-        ax.tick_params(axis='both', which='major', labelsize=16)
+        ax.tick_params(axis='both', which='major', labelsize=20)
         ax.set_yticks(tuple(self.station_positions.values()))
-        ax.set_yticklabels(self.station_positions.keys(), fontsize=14)
+        ax.set_yticklabels(self.station_positions.keys(), fontsize=20)
 
         ax.grid(True)
         ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
         ax.set_xlim(self.round_to_nearest_half_hour(min_x - 10),
                     self.round_to_nearest_half_hour(max_x + 10, round_down=False))
-        ax.set_title(main_title, fontweight='bold', fontsize=20)
-        ax.set_xlabel('Tiempo (HH:MM)', fontsize=18)
-        ax.set_ylabel('Estaciones', fontsize=18)
+        ax.set_title(main_title, fontweight='bold', fontsize=30)
+        ax.set_xlabel('Time (HH:MM)', fontsize=24)
+        ax.set_ylabel('Stations', fontsize=24)
 
         ax.xaxis.set_major_locator(MultipleLocator(90))
         formatter = FuncFormatter(self.minutes_to_hhmm)
         ax.xaxis.set_major_formatter(formatter)
-        plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right')
+        plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right', fontsize=20)
 
         plt.tight_layout()
         plt.show()
