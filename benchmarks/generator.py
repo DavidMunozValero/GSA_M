@@ -138,3 +138,55 @@ def get_revenue_behaviour(supply: Supply,
             k = tsp_k[service.tsp.id]
         revenue[service.id] = {'canon': total_canon, 'k': k, 'dt_max_penalty': dt_penalty, 'tt_max_penalty': tt_penalty}
     return revenue
+
+
+def get_revenue_behaviour_deprecated(supply: Supply) -> Mapping[str, Mapping[str, float]]:
+    """
+    Get revenue behaviour
+
+    Args:
+        supply (Supply): supply.
+
+    Returns:
+        Mapping[int, Mapping[str, float]]: revenue behaviour.
+    """
+    revenue = {}
+    bias = [0.2, 0.35, 0.1]
+    for service in supply.services:
+        b = np.random.choice(bias)
+        base_price = 55 * len(service.line.stations)
+        canon = base_price + b * base_price
+        k = np.round(loguniform.rvs(0.01, 100, 1), 2)
+        max_penalty = canon * 0.4
+        dt_penalty = np.round(max_penalty * 0.35, 2)
+        tt_penalty = np.round((max_penalty - dt_penalty) / (len(service.line.stations) - 1), 2)
+        revenue[service.id] = {'canon': canon, 'k': k, 'dt_max_penalty': dt_penalty, 'tt_max_penalty': tt_penalty}
+    return revenue
+
+
+def get_revenue_behaviour_old(services: Mapping,
+                              alpha: float = 2/3) -> Mapping[str, Mapping[str, float]]:
+    """
+    Get revenue behaviour
+
+    Args:
+        supply (Supply): supply.
+        alpha (float): alpha to adjust canon by 100 passengers.
+
+    Returns:
+        Mapping[int, Mapping[str, float]]: revenue behaviour.
+    """
+    revenue = {}
+    for service in services:
+        distances = [50 for _ in range(len(services[service]) - 1)]
+        distance_factor = 7 * sum(distances)
+        service_capacity = 300
+        capacity_factor = alpha * service_capacity
+        stations_factor = 180 + (len(distances) - 2) * 65 + 165
+        total_canon = distance_factor + capacity_factor + stations_factor
+        max_penalty = total_canon * 0.4
+        dt_penalty = np.round(max_penalty * 0.35, 2)
+        tt_penalty = np.round((max_penalty - dt_penalty) / len(distances), 2)
+        k = np.round(loguniform.rvs(0.01, 100, 1), 2)
+        revenue[service] = {'canon': total_canon, 'k': k, 'dt_max_penalty': dt_penalty, 'tt_max_penalty': tt_penalty}
+    return revenue
