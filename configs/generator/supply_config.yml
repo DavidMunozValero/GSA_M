@@ -179,7 +179,68 @@ trainServiceProvider:
   - '32'
 line:
 - id: '1'
-  name: 'No Stops MAD - BCN'
+  name: 'ZAR - LLE - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Zaragoza'
+    arrival_time: 0
+    departure_time: 1
+  - station: 'Lleida'
+    arrival_time: 46
+    departure_time: 48
+  - station: 'Tarragona'
+    arrival_time: 77
+    departure_time: 79
+  - station: 'Barcelona'
+    arrival_time: 117
+    departure_time: 117
+- id: '2'
+  name: 'MAD - GUA - CAL'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Guadalajara'
+    arrival_time: 23
+    departure_time: 24
+  - station: 'Calatayud'
+    arrival_time: 66
+    departure_time: 66
+- id: '3'
+  name: 'MAD - GUA - CAL - ZAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Guadalajara'
+    arrival_time: 23
+    departure_time: 24
+  - station: 'Calatayud'
+    arrival_time: 66
+    departure_time: 67
+  - station: 'Zaragoza'
+    arrival_time: 92
+    departure_time: 92
+- id: '4'
+  name: 'MAD - CAL - ZAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Calatayud'
+    arrival_time: 55
+    departure_time: 56
+  - station: 'Zaragoza'
+    arrival_time: 81
+    departure_time: 82
+  - station: 'Barcelona'
+    arrival_time: 171
+    departure_time: 171
+- id: '5'
+  name: 'MAD - BAR'
   corridor: '1'
   stops:
   - station: 'Madrid'
@@ -188,8 +249,62 @@ line:
   - station: 'Barcelona'
     arrival_time: 150
     departure_time: 150
-- id: '2'
-  name: 'Stops MAD - BCN'
+- id: '6'
+  name: 'MAD - GUA - ZAR - LLE - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Guadalajara'
+    arrival_time: 23
+    departure_time: 24
+  - station: 'Zaragoza'
+    arrival_time: 81
+    departure_time: 82
+  - station: 'Lleida'
+    arrival_time: 127
+    departure_time: 129
+  - station: 'Tarragona'
+    arrival_time: 158
+    departure_time: 160
+  - station: 'Barcelona'
+    arrival_time: 198
+    departure_time: 198
+- id: '7'
+  name: 'MAD - ZAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Zaragoza'
+    arrival_time: 75
+    departure_time: 76
+  - station: 'Barcelona'
+    arrival_time: 165
+    departure_time: 165
+- id: '8'
+  name: 'MAD - ZAR - LLE - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Zaragoza'
+    arrival_time: 75
+    departure_time: 76
+  - station: 'Lleida'
+    arrival_time: 121
+    departure_time: 123
+  - station: 'Tarragona'
+    arrival_time: 152
+    departure_time: 154
+  - station: 'Barcelona'
+    arrival_time: 192
+    departure_time: 192
+- id: '9'
+  name: 'MAD - CAL - ZAR - LLE - TAR - BAR'
   corridor: '1'
   stops:
   - station: 'Madrid'
@@ -202,16 +317,16 @@ line:
     arrival_time: 81
     departure_time: 82
   - station: 'Lleida'
-    arrival_time: 125
-    departure_time: 127
+    arrival_time: 127
+    departure_time: 129
   - station: 'Tarragona'
-    arrival_time: 154
-    departure_time: 156
+    arrival_time: 158
+    departure_time: 160
   - station: 'Barcelona'
-    arrival_time: 192
-    departure_time: 192
-- id: '3'
-  name: 'Main Stops MAD - BCN'
+    arrival_time: 198
+    departure_time: 198
+- id: '10'
+  name: 'MAD - ZAR - LLE - BAR'
   corridor: '1'
   stops:
   - station: 'Madrid'
@@ -219,20 +334,103 @@ line:
     departure_time: 0
   - station: 'Zaragoza'
     arrival_time: 75
-    departure_time: 77
-  - station: 'Tarragona'
-    arrival_time: 150
-    departure_time: 152
+    departure_time: 76
+  - station: 'Lleida'
+    arrival_time: 121
+    departure_time: 123
   - station: 'Barcelona'
-    arrival_time: 185
-    departure_time: 185
-- id: '4'
-  name: 'Directo ZAR - BAR'
+    arrival_time: 192
+    departure_time: 192
+- id: '11'
+  name: 'MAD - ZAR - TAR - BAR'
   corridor: '1'
   stops:
-  - station: 'Zaragoza'
+  - station: 'Madrid'
     arrival_time: 0
     departure_time: 0
+  - station: 'Zaragoza'
+    arrival_time: 75
+    departure_time: 76
+  - station: 'Tarragona'
+    arrival_time: 132
+    departure_time: 134
   - station: 'Barcelona'
-    arrival_time: 110
-    departure_time: 110
+    arrival_time: 172
+    departure_time: 172
+- id: '12'
+  name: 'MAD - GUA - CAL - ZAR - LLE - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Guadalajara'
+    arrival_time: 23
+    departure_time: 24
+  - station: 'Calatayud'
+    arrival_time: 66
+    departure_time: 67
+  - station: 'Zaragoza'
+    arrival_time: 92
+    departure_time: 93
+  - station: 'Lleida'
+    arrival_time: 138
+    departure_time: 140
+  - station: 'Tarragona'
+    arrival_time: 169
+    departure_time: 171
+  - station: 'Barcelona'
+    arrival_time: 209
+    departure_time: 209
+- id: '13'
+  name: 'MAD - GUA - ZAR - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Madrid'
+    arrival_time: 0
+    departure_time: 0
+  - station: 'Guadalajara'
+    arrival_time: 23
+    departure_time: 24
+  - station: 'Zaragoza'
+    arrival_time: 81
+    departure_time: 82
+  - station: 'Tarragona'
+    arrival_time: 138
+    departure_time: 140
+  - station: 'Barcelona'
+    arrival_time: 178
+    departure_time: 178
+- id: '14'
+  name: 'LLE - TAR - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Lleida'
+    arrival_time: 0
+    departure_time: 2
+  - station: 'Tarragona'
+    arrival_time: 31
+    departure_time: 33
+  - station: 'Barcelona'
+    arrival_time: 71
+    departure_time: 71
+- id: '15'
+  name: 'LLE - BAR'
+  corridor: '1'
+  stops:
+  - station: 'Lleida'
+    arrival_time: 0
+    departure_time: 2
+  - station: 'Barcelona'
+    arrival_time: 71
+    departure_time: 71
+- id: '16'
+  name: 'CAL - ZAR'
+  corridor: '1'
+  stops:
+  - station: 'Calatayud'
+    arrival_time: 0
+    departure_time: 1
+  - station: 'Zaragoza'
+    arrival_time: 26
+    departure_time: 26
