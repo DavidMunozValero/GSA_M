@@ -8,6 +8,7 @@ import seaborn as sns
 from typing import Mapping, Tuple
 
 from geopy.distance import geodesic
+from matplotlib.colors import ListedColormap
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from pathlib import Path
 from robin.supply.entities import Line, Service, Supply
@@ -59,7 +60,7 @@ def is_better_solution(rus_revenue: Mapping[str, float],
 
 def sns_box_plot(df: pd.DataFrame,
                  x_data: str,
-                    y_data: str,
+                 y_data: str,
                  title: str,
                  x_label: str,
                  y_label: str,
@@ -147,9 +148,12 @@ def int_input(prompt: str) -> int:
             print('Invalid input. Please, enter an integer.')
 
 
-def get_schedule_from_supply(path: Path) -> Mapping[str, Mapping[str, List[int]]]:
+def get_schedule_from_supply(path: Union[Path, None] = None,
+                             supply: Union[Supply, None] = None
+                             ) -> Mapping[str, Mapping[str, List[int]]]:
+    if not supply:
+        supply = Supply.from_yaml(path=path)
     requested_schedule = {}
-    supply = Supply.from_yaml(path=path)
     for service in supply.services:
         requested_schedule[service.id] = {}
         time = service.id.split("-")[-1]
@@ -195,33 +199,6 @@ class TrainSchedulePlotter:
         color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         color_list = list(color_cycle)
         return color_list
-
-    def minutes_to_hhmm(self, minutes: int, pos) -> str:
-        hours = int(minutes // 60)
-        minutes = int(minutes % 60)
-        hours = str(hours).zfill(2)
-        minutes = str(minutes).zfill(2)
-        label = f'{hours}:{minutes} h.'
-        return label
-
-    def round_to_nearest_half_hour(self, minutes, round_down=True):
-        hours = minutes // 60
-        remainder_minutes = minutes % 60
-
-        if round_down:
-            if remainder_minutes < 30:
-                rounded_minutes = 0
-            else:
-                rounded_minutes = 30
-        else:
-            if remainder_minutes >= 30:
-                rounded_minutes = 30
-            else:
-                hours += 1
-                rounded_minutes = 0
-
-        total_rounded_minutes = hours * 60 + rounded_minutes
-        return total_rounded_minutes
 
     def plot(self,
              main_title: str = "Marey Diagram",
@@ -283,14 +260,14 @@ class TrainSchedulePlotter:
 
         ax.grid(True)
         ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
-        ax.set_xlim(self.round_to_nearest_half_hour(min_x - 10),
-                    self.round_to_nearest_half_hour(max_x + 10, round_down=False))
+        ax.set_xlim(round_to_nearest_half_hour(min_x - 10),
+                    round_to_nearest_half_hour(max_x + 10, round_down=False))
         ax.set_title(main_title, fontweight='bold', fontsize=30)
         ax.set_xlabel('Time (HH:MM)', fontsize=24)
         ax.set_ylabel('Stations', fontsize=24)
 
         ax.xaxis.set_major_locator(MultipleLocator(90))
-        formatter = FuncFormatter(self.minutes_to_hhmm)
+        formatter = FuncFormatter(minutes_to_hhmm)
         ax.xaxis.set_major_formatter(formatter)
         plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right', fontsize=20)
 
@@ -343,3 +320,143 @@ def get_services_by_tsp_df(services: List[Service]) -> pd.DataFrame:
     services_by_tsp['Total'] = sum(services_by_tsp.values())
     df = pd.DataFrame.from_dict(services_by_tsp, orient='index', columns=['Number of Services'])
     return df
+
+
+def minutes_to_hhmm(minutes: int, pos) -> str:
+    hours = int(minutes // 60)
+    minutes = int(minutes % 60)
+    hours = str(hours).zfill(2)
+    minutes = str(minutes).zfill(2)
+    label = f'{hours}:{minutes} h.'
+    return label
+
+
+def round_to_nearest_half_hour(minutes, round_down=True):
+    hours = minutes // 60
+    remainder_minutes = minutes % 60
+
+    if round_down:
+        if remainder_minutes < 30:
+            rounded_minutes = 0
+        else:
+            rounded_minutes = 30
+    else:
+        if remainder_minutes >= 30:
+            rounded_minutes = 30
+        else:
+            hours += 1
+            rounded_minutes = 0
+
+    total_rounded_minutes = hours * 60 + rounded_minutes
+    return total_rounded_minutes
+
+
+def plot_marey_chart(requested_supply: Supply,
+                     scheduled_supply: Union[Supply, None] = None,
+                     colors_by_tsp: bool = False,
+                     main_title: str = "Marey Diagram",
+                     plot_security_gaps: bool = False,
+                     security_gap: int = 10,
+                     save_path: Union[Path, None] = None
+                     ) -> None:
+    requested_supply = requested_supply
+    # TODO: Check if supply has multiple branches in corridor
+    line = infer_line_stations([line for line in requested_supply.lines])
+    station_positions = get_stations_positions(line, scale=1000)
+    qualitative_colors = sns.color_palette("pastel", 10)
+    my_cmap = ListedColormap(sns.color_palette(qualitative_colors).as_hex())
+
+    tsps = set([service.tsp.name for service in requested_supply.services])
+    services_dict = {service.id: service for service in requested_supply.services}
+    tsp_colors = {tsp: my_cmap(i) for i, tsp in enumerate(tsps)}
+    service_color = {service.id: tsp_colors[service.tsp.name] for service in requested_supply.services}
+
+    fig, ax = plt.subplots(figsize=(15, 8))
+
+    min_x = 24 * 60
+    max_x = 0
+    color_idx = 0
+    schedule_data = get_schedule_from_supply(supply=requested_supply)
+    labels_added = set()
+    # Set default color for requested services
+    requested_color = '#D3D3D3'
+    polygons = []
+    for train_id, stations in schedule_data.items():
+        times = [time for station, (arrival, departure) in stations.items() for time in (arrival, departure)]
+        if min(times) < min_x:
+            min_x = min(times)
+        if max(times) > max_x:
+            max_x = max(times)
+        station_indices = [station_positions[station] for station in stations.keys() for _ in range(2)]
+        if services_dict[train_id].tsp.name not in labels_added:
+            label = services_dict[train_id].tsp.name
+            labels_added.add(label)
+        else:
+            label = None
+
+        ax.plot(times,
+                station_indices,
+                color=service_color[train_id],
+                marker='o',
+                linewidth=2.0,
+                label=label)
+
+        if plot_security_gaps:
+            stops = list(stations.keys())
+            for i in range(len(stops) - 1):
+                departure_x = stations[stops[i]][1]
+                arrival_x = stations[stops[i + 1]][0]
+                if departure_x < min_x:
+                    min_x = departure_x
+                if arrival_x > max_x:
+                    max_x = arrival_x
+                departure_station_y = station_positions[stops[i]]
+                arrival_station_y = station_positions[stops[i + 1]]
+                gap = security_gap
+                vertices = [(departure_x - gap, departure_station_y), (arrival_x - gap, arrival_station_y),
+                            (arrival_x + gap, arrival_station_y), (departure_x + gap, departure_station_y)]
+                ring_mixed = Polygon(vertices)
+                polygons.append(ring_mixed)
+                ring_patch = PolygonPatch(ring_mixed,
+                                          facecolor=requested_color,
+                                          edgecolor=requested_color,
+                                          alpha=0.6)
+                ax.add_patch(ring_patch)
+
+        for i, pa in enumerate(polygons):
+            for j, pb in enumerate(polygons[i:], start=i):
+                if i == j:
+                    continue
+                intersection = pa.intersection(pb)
+                if not intersection.is_empty and intersection.geom_type == 'Polygon':
+                    intersection_patch = PolygonPatch(intersection, facecolor='magenta', edgecolor='magenta', alpha=0.1)
+                    ax.add_patch(intersection_patch)
+
+    for spn in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spn].set_visible(True)
+        ax.spines[spn].set_linewidth(1.0)
+        ax.spines[spn].set_color('#A9A9A9')
+
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_yticks(tuple(station_positions.values()))
+    ax.set_yticklabels(station_positions.keys(), fontsize=20)
+
+    ax.grid(True)
+    ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
+    ax.set_xlim(round_to_nearest_half_hour(min_x - 10),
+                round_to_nearest_half_hour(max_x + 10, round_down=False))
+    ax.set_title(main_title, fontweight='bold', fontsize=30)
+    ax.set_xlabel('Time (HH:MM)', fontsize=24)
+    ax.set_ylabel('Stations', fontsize=24)
+
+    ax.legend()
+    ax.xaxis.set_major_locator(MultipleLocator(90))
+    formatter = FuncFormatter(minutes_to_hhmm)
+    ax.xaxis.set_major_formatter(formatter)
+    plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right', fontsize=20)
+
+    plt.tight_layout()
+    plt.show()
+
+    if save_path:
+        fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
