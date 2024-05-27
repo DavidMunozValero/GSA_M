@@ -127,7 +127,7 @@ def get_revenue_behaviour(supply: Supply,
         service_capacity = service.rolling_stock.total_capacity
         capacity_factor = (alpha * service_capacity) / 100 * 1.67
         stations_factor = 18 + (len(sta_coords) - 2) * 65 + 165
-        total_canon = distance_factor + capacity_factor + stations_factor
+        total_canon = (distance_factor + capacity_factor + stations_factor) / 100
         max_penalty = total_canon * 0.3
         dt_penalty = np.round(max_penalty * 0.35, 2)
         tt_penalty = np.round((max_penalty - dt_penalty) / (len(sta_coords) - 1), 2)

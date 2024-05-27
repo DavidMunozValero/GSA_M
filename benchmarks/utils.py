@@ -70,14 +70,20 @@ def sns_box_plot(df: pd.DataFrame,
                  ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold', fontsize=20)
-    # ax.set_xlim(min(df[x_data]), max(df[x_data]))
-    # ax.set_ylim(min(df[y_data]), max(df[y_data]))
+    ax.set_title(title, fontweight='bold', fontsize=18)
 
-    sns.boxplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, zorder=1, boxprops=dict(alpha=.3))
-    sns.stripplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, alpha=0.5, zorder=1)
+    # Draw the boxplot and stripplot
+    boxplot = sns.boxplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, zorder=1, boxprops=dict(alpha=.3), ax=ax)
+    stripplot = sns.stripplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, alpha=0.5, zorder=1, ax=ax)
+
+    # Remove the stripplot legend handles
+    handles, labels = ax.get_legend_handles_labels()
+    new_handles = [handle for handle, label in zip(handles, labels) if 'line' not in str(type(handle))]
+
+    if hue:
+        ax.legend(handles=new_handles, title=hue, fontsize=12, title_fontsize=14)
+
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
-
     ax.tick_params(axis='both', which='major', labelsize=14)
     ax.set_xlabel(x_label, fontsize=16)
     ax.set_ylabel(y_label, fontsize=16)
@@ -104,7 +110,7 @@ def sns_line_plot(df: pd.DataFrame,
                   ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold', fontsize=20)
+    ax.set_title(title, fontweight='bold', fontsize=18)
     # ax.set_xlim(min(df[x_data]), max(df[x_data]))
     # ax.set_ylim(min(df[y_data]), max(df[y_data]))
 
@@ -156,9 +162,8 @@ def get_schedule_from_supply(path: Union[Path, None] = None,
     requested_schedule = {}
     for service in supply.services:
         requested_schedule[service.id] = {}
-        time = service.id.split("-")[-1]
-        hour, minute = time.split(".")
-        delta = int(hour) * 60 + int(minute)
+        time = service.time_slot.start
+        delta = time.total_seconds() // 60
         for stop in service.line.timetable:
             arrival_time = delta + int(service.line.timetable[stop][0])
             departure_time = delta + int(service.line.timetable[stop][1])
@@ -201,7 +206,7 @@ class TrainSchedulePlotter:
         return color_list
 
     def plot(self,
-             main_title: str = "Marey Diagram",
+             main_title: str = "Diagrama de Marey",
              plot_security_gaps: bool = False,
              security_gap: int = 10,
              save_path: Union[Path, None] = None
@@ -263,8 +268,8 @@ class TrainSchedulePlotter:
         ax.set_xlim(round_to_nearest_half_hour(min_x - 10),
                     round_to_nearest_half_hour(max_x + 10, round_down=False))
         ax.set_title(main_title, fontweight='bold', fontsize=30)
-        ax.set_xlabel('Time (HH:MM)', fontsize=24)
-        ax.set_ylabel('Stations', fontsize=24)
+        ax.set_xlabel('Hora (HH:MM)', fontsize=24)
+        ax.set_ylabel('Estaciones', fontsize=24)
 
         ax.xaxis.set_major_locator(MultipleLocator(90))
         formatter = FuncFormatter(minutes_to_hhmm)
@@ -292,7 +297,7 @@ def infer_line_stations(lines: List[Line]) -> Mapping[str, Tuple[float, float]]:
     # Complete line with other stations that are not in the initial line
     for line in lines:
         for i, station in enumerate(line.stations):
-            if station not in line_stations:
+            if station not in line_stations and i < len(line.stations) - 1:
                 line_stations.insert(line_stations.index(line.stations[i + 1]), station)
 
     return {station.id: station.coords for station in line_stations}
@@ -354,7 +359,7 @@ def round_to_nearest_half_hour(minutes, round_down=True):
 def plot_marey_chart(requested_supply: Supply,
                      scheduled_supply: Union[Supply, None] = None,
                      colors_by_tsp: bool = False,
-                     main_title: str = "Marey Diagram",
+                     main_title: str = "Diagrama de Marey",
                      plot_security_gaps: bool = False,
                      security_gap: int = 10,
                      save_path: Union[Path, None] = None
@@ -377,6 +382,7 @@ def plot_marey_chart(requested_supply: Supply,
     max_x = 0
     color_idx = 0
     schedule_data = get_schedule_from_supply(supply=requested_supply)
+    print(schedule_data)
     labels_added = set()
     # Set default color for requested services
     requested_color = '#D3D3D3'
@@ -429,7 +435,7 @@ def plot_marey_chart(requested_supply: Supply,
                     continue
                 intersection = pa.intersection(pb)
                 if not intersection.is_empty and intersection.geom_type == 'Polygon':
-                    intersection_patch = PolygonPatch(intersection, facecolor='magenta', edgecolor='magenta', alpha=0.1)
+                    intersection_patch = PolygonPatch(intersection, facecolor='crimson', edgecolor='crimson', alpha=0.5)
                     ax.add_patch(intersection_patch)
 
     for spn in ('top', 'right', 'bottom', 'left'):
@@ -437,20 +443,20 @@ def plot_marey_chart(requested_supply: Supply,
         ax.spines[spn].set_linewidth(1.0)
         ax.spines[spn].set_color('#A9A9A9')
 
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.tick_params(axis='both', which='major', labelsize=16)
     ax.set_yticks(tuple(station_positions.values()))
-    ax.set_yticklabels(station_positions.keys(), fontsize=20)
+    ax.set_yticklabels(station_positions.keys(), fontsize=16)
 
     ax.grid(True)
     ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
-    ax.set_xlim(round_to_nearest_half_hour(min_x - 10),
-                round_to_nearest_half_hour(max_x + 10, round_down=False))
-    ax.set_title(main_title, fontweight='bold', fontsize=30)
-    ax.set_xlabel('Time (HH:MM)', fontsize=24)
-    ax.set_ylabel('Stations', fontsize=24)
+    # ax.set_xlim(round_to_nearest_half_hour(min_x - 10), round_to_nearest_half_hour(max_x + 10, round_down=False))
+    ax.set_xlim(60, 26*60)
+    ax.set_title(main_title, fontweight='bold', fontsize=24)
+    ax.set_xlabel('Hora (HH:MM)', fontsize=18)
+    ax.set_ylabel('Estaciones', fontsize=18)
 
     ax.legend()
-    ax.xaxis.set_major_locator(MultipleLocator(90))
+    ax.xaxis.set_major_locator(MultipleLocator(60))
     formatter = FuncFormatter(minutes_to_hhmm)
     ax.xaxis.set_major_formatter(formatter)
     plt.setp(ax.get_xticklabels(), rotation=70, horizontalalignment='right', fontsize=20)

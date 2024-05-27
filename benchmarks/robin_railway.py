@@ -60,7 +60,6 @@ class RevenueMaximization:
                       solution: Solution
                       ) -> List[Service]:
         self.update_schedule(solution)
-
         services = []
         supply = Supply.from_yaml(path=path)
         scheduled_services = solution.discrete
@@ -74,13 +73,14 @@ class RevenueMaximization:
             service_schedule = self.updated_schedule[service.id]
             timetable = {sta: tuple(map(float, service_schedule[sta])) for sta in service_schedule}
             departure_time = list(timetable.values())[0][1]
-            updated_line_id = str(hash(str(timetable.values())))
-            updated_line = Line(updated_line_id, service.line.name, service.line.corridor, timetable)
+            relative_timetable = {sta: tuple(map(lambda x: float(x - departure_time), service_schedule[sta])) for sta in service_schedule}
+            updated_line_id = str(hash(str(relative_timetable.values())))
+            updated_line = Line(updated_line_id, service.line.name, service.line.corridor, relative_timetable)
             date = service.date
             start_time = datetime.timedelta(minutes=float(departure_time))
             time_slot_id = f'{start_time.seconds}'
 
-            updated_time_slot = TimeSlot(time_slot_id, service.time_slot.start, service.time_slot.end)
+            updated_time_slot = TimeSlot(time_slot_id, start_time, start_time + datetime.timedelta(minutes=10))
             updated_service = build_service(id_=service.id,
                                             date=date,
                                             line=updated_line,
@@ -89,7 +89,6 @@ class RevenueMaximization:
                                             rs=service.rolling_stock,
                                             prices=service.prices,
                                             build_service_id=False)
-
             services.append(updated_service)
         return services
 
@@ -253,7 +252,7 @@ class RevenueMaximization:
                         #print(f"AT gap: {at_gap}")
 
                         same_sign = lambda x, y: x * y > 0
-                        if same_sign(dt_gap, at_gap) and all(abs(t) >= 2 * self.safe_headway for t in (dt_gap, at_gap)):
+                        if same_sign(dt_gap, at_gap) and all(abs(t) >= 2* self.safe_headway for t in (dt_gap, at_gap)):
                             # print(f"No conflict detected")
                             continue
                         else:

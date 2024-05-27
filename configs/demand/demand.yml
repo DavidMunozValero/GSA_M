@@ -3,19 +3,19 @@
 # Market
 market:
   - id: 1
-    departure_station: '60000'
+    departure_station: 'Madrid'
     departure_station_coords: [40.416775, -3.703790]
-    arrival_station: '04040'
+    arrival_station: 'Zaragoza'
     arrival_station_coords: [41.648822, -0.889085]
   - id: 2
-    departure_station: '04040'
+    departure_station: 'Zaragoza'
     departure_station_coords: [41.648822, -0.889085]
-    arrival_station: '71801'
+    arrival_station: 'Barcelona'
     arrival_station_coords: [41.385064, 2.173404]
   - id: 3
-    departure_station: '60000'
+    departure_station: 'Madrid'
     departure_station_coords: [40.416775, -3.703790]
-    arrival_station: '71801'
+    arrival_station: 'Barcelona'
     arrival_station_coords: [41.385064, 2.173404]
 
 # User Pattern
@@ -24,7 +24,7 @@ userPattern:
     name: Business
     rules:
       R0: IF (seat is Premium) THEN 20.0
-      R1: IF (tsp is AVE) | (tsp is AVLO) THEN 20.0
+      R1: IF (tsp is RU1) | (tsp is RU2) THEN 20.0
       R2: IF (origin is very_near) & (destination is very_near) & (departure_time is in_time) & (arrival_time is in_time) THEN 60.0
     variables:
       - name: origin
@@ -72,7 +72,7 @@ userPattern:
         labels: [ Turista, TuristaPlus, Premium ]
       - name: tsp
         type: categorical
-        labels: [AVE, AVLO, OUIGO, IRYO]
+        labels: [RU1, RU2, RU3, RU4]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 8
@@ -101,7 +101,7 @@ userPattern:
       loc: 2
       scale: 1
   - id: 2
-    name: Student
+    name: Estudiante
     rules:
       R0: IF (origin is very_near) & (destination is very_near) THEN 10.0
       R1: IF (price is very_cheap) | (price is cheap) THEN 20.0
@@ -153,7 +153,7 @@ userPattern:
         labels: [ Turista, TuristaPlus, Premium ]
       - name: tsp
         type: categorical
-        labels: [AVE, AVLO, OUIGO, IRYO]
+        labels: [RU1, RU2, RU3, RU4]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 18
@@ -182,11 +182,11 @@ userPattern:
       loc: 1
       scale: 0.5
   - id: 3
-    name: Tourist
+    name: Turista
     rules:
       R0: IF (price is very_cheap) | (price is cheap) THEN 20.0
       R1: IF (seat is Turista) | (seat is TuristaPlus) THEN 10.0
-      R2: IF ((seat is Turista) | (seat is TuristaPlus)) & ((tsp is AVLO) | (tsp is OUIGO) | (tsp is IRYO)) THEN 20.0
+      R2: IF ((seat is Turista) | (seat is TuristaPlus)) & ((tsp is RU2) | (tsp is RU3) | (tsp is RU4)) THEN 20.0
       R3: IF ((seat is Turista) | (seat is TuristaPlus)) & ((origin is very_near) | (origin is mid_range)) & (destination is very_near) THEN 50.0
     variables:
       - name: origin
@@ -234,7 +234,7 @@ userPattern:
         labels: [ Turista, TuristaPlus, Premium ]
       - name: tsp
         type: categorical
-        labels: [AVE, AVLO, OUIGO, IRYO]
+        labels: [RU1, RU2, RU3, RU4]
     arrival_time: norm
     arrival_time_kwargs:
       loc: 14
@@ -263,7 +263,7 @@ userPattern:
       loc: 2.5
       scale: 3
   - id: 4
-    name: EventTourist
+    name: Turista de Eventos
     rules:
       R0: IF (price is very_cheap) | (price is cheap) | (price is medium) THEN 25.0
       R1: IF (departure_time is in_time) & (arrival_time is in_time) THEN 50.0
@@ -314,11 +314,11 @@ userPattern:
         labels: [ Turista, TuristaPlus, Premium ]
       - name: tsp
         type: categorical
-        labels: [AVE, AVLO, OUIGO, IRYO]
+        labels: [RU1, RU2, RU3, RU4]
     arrival_time: norm
     arrival_time_kwargs:
-      loc: 14
-      scale: 6
+      loc: 15
+      scale: 8
     purchase_day: randint
     purchase_day_kwargs:
       low: 7
@@ -343,7 +343,7 @@ userPattern:
       loc: 2.5
       scale: 3
   - id: 5
-    name: Adventurer
+    name: Aventurero
     rules:
       R0: IF (price is very_cheap) | (price is cheap) THEN 55.0
       R1: IF (origin is very_near) | (origin is mid_range) THEN 35.0
@@ -394,11 +394,11 @@ userPattern:
         labels: [ Turista, TuristaPlus, Premium ]
       - name: tsp
         type: categorical
-        labels: [AVE, AVLO, OUIGO, IRYO]
+        labels: [RU1, RU2, RU3, RU4]
     arrival_time: norm
     arrival_time_kwargs:
-      loc: 14
-      scale: 6
+      loc: 10
+      scale: 5
     purchase_day: randint
     purchase_day_kwargs:
       low: 2
@@ -483,5 +483,5 @@ demandPattern:
 # Day
 day:
   - id: 1
-    date: 2023-06-25
+    date: 2024-06-25
     demandPattern: 1

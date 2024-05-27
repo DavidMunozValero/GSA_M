@@ -99,57 +99,57 @@ corridor:
                     des: []
 rollingStock:
 - id: '11'
-  name: 'AVE RS1'
+  name: 'RU1 RS1'
   seats:
   - hard_type: 1
     quantity: 200
   - hard_type: 2
     quantity: 50
 - id: '12'
-  name: 'AVE RS2'
+  name: 'RU1 RS2'
   seats:
   - hard_type: 1
     quantity: 250
   - hard_type: 2
     quantity: 50
 - id: '13'
-  name: 'AVE RS3'
+  name: 'RU1 RS3'
   seats:
   - hard_type: 1
     quantity: 300
   - hard_type: 2
     quantity: 50
 - id: '21'
-  name: 'AVLO RS1'
+  name: 'RU2 RS1'
   seats:
   - hard_type: 1
     quantity: 300
 - id: '22'
-  name: 'AVLO RS2'
+  name: 'RU2 RS2'
   seats:
   - hard_type: 1
     quantity: 350
 - id: '31'
-  name: 'OUIGO RS1'
+  name: 'RU2 RS1'
   seats:
   - hard_type: 1
     quantity: 300
   - hard_type: 2
     quantity: 50
 - id: '32'
-  name: 'OUIGO RS2'
+  name: 'RU2 RS2'
   seats:
   - hard_type: 2
     quantity: 450
 - id: '41'
-  name: 'IRYO RS1'
+  name: 'RU3 RS1'
   seats:
   - hard_type: 1
     quantity: 300
   - hard_type: 2
     quantity: 50
 - id: '42'
-  name: 'IRYO RS2'
+  name: 'RU3 RS2'
   seats:
   - hard_type: 1
     quantity: 350
@@ -157,23 +157,23 @@ rollingStock:
     quantity: 50
 trainServiceProvider:
 - id: '1'
-  name: 'AVE'
+  name: 'RU1'
   rolling_stock:
   - '11'
   - '12'
   - '13'
 - id: '2'
-  name: 'AVLO'
+  name: 'RU2'
   rolling_stock:
   - '21'
   - '22'
 - id: '3'
-  name: 'IRYO'
+  name: 'RU3'
   rolling_stock:
   - '41'
   - '42'
 - id: '4'
-  name: 'OUIGO'
+  name: 'RU4'
   rolling_stock:
   - '31'
   - '32'
