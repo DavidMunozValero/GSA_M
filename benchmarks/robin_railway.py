@@ -182,11 +182,38 @@ class RevenueMaximization:
             c = y_coords[0] - m * x_coords[0]
             return lambda y: (y - c) / m
 
+        def infer_times(service, station, origin: bool=True) -> float:
+            idx = 1 if origin else 0
+            if station in self.updated_schedule[service]:
+                return self.updated_schedule[service][station][idx]
+
+            stations = tuple(self.updated_schedule[service].keys())
+            # Get station before and after
+            stations_pos = [self.line_stations[s] for s in stations]
+            # Get position of station
+            station_pos = self.line_stations[station]
+            # Get station before and after
+            before = None
+            after = None
+            for i in range(len(stations)-1):
+                if station_pos > stations_pos[i] and station_pos < stations_pos[i+1]:
+                    before = stations[i]
+                    after = stations[i+1]
+                    break
+
+            if not before or not after:
+                raise ValueError(f"Station {station} not found in service {service}")
+            A = (self.updated_schedule[service][before][1], self.line_stations[before])
+            B = (self.updated_schedule[service][after][0], self.line_stations[after])
+            line_other = get_x_line_equation(A, B)
+            return line_other(self.line_stations[station])
+
         conflict_matrix = np.zeros((len(self.requested_schedule), len(self.requested_schedule)), dtype=np.bool_)
         #print(self.line_stations)
 
         for i, service in enumerate(self.requested_schedule):
             #print(f"Service: {service} - {i}")
+            #print("Service times: ", self.updated_schedule[service])
             service_stations = tuple(self.requested_schedule[service].keys())
             for k, station in enumerate(service_stations):
                 if k == len(service_stations) - 1:
@@ -200,6 +227,7 @@ class RevenueMaximization:
 
                 for j, other_service in enumerate(self.requested_schedule):
                     #print("Other service: ", other_service)
+                    #print("Other service times: ", self.updated_schedule[other_service])
                     if other_service == service or conflict_matrix[i, j]:
                         #print("Skip 1")
                         continue
@@ -229,34 +257,53 @@ class RevenueMaximization:
                                 trips.add((s, other_service_stations[idx + 1]))
                             elif idx == 0:
                                 trips.add((s, other_service_stations[idx + 1]))
+                            elif idx == len(other_service_stations) - 1:
+                                trips.add((other_service_stations[idx - 1], s))
 
                     #print(f"\t\t\tTrips to test: {trips}")
                     for trip in trips:
                         other_service_init, other_service_end = trip
                         #print(f"\t\t\tOther Service Init: {other_service_init} - Other Service End: {other_service_end}")
-                        A = (self.updated_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
-                        B = (self.updated_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
+                        #A = (self.updated_schedule[other_service][other_service_init][1], self.line_stations[other_service_init])
+                        #B = (self.updated_schedule[other_service][other_service_end][0], self.line_stations[other_service_end])
                         #print(f"A: {A}")
                         #print(f"B: {B}")
-                        line_other = get_x_line_equation(A, B)
-                        other_departure_time = line_other(self.line_stations[departure_station])
-                        other_arrival_time = line_other(self.line_stations[arrival_station])
+                        #line_other = get_x_line_equation(A, B)
+                        #other_departure_time = line_other(self.line_stations[departure_station])
+                        #other_arrival_time = line_other(self.line_stations[arrival_station])
                         #print(f"Other DT: {other_departure_time}")
                         #print(f"Other AT: {other_arrival_time}")
+                        inference_departure_station = max([departure_station, other_service_init],
+                                                          key=lambda x: self.line_stations[x])
+                        inference_arrival_station = min([arrival_station, other_service_end],
+                                                        key=lambda x: self.line_stations[x])
 
-                        dt_gap = other_departure_time - departure_time
-                        at_gap = other_arrival_time - arrival_time
-                        #print("Sdt: ", departure_time)
-                        #print("Sat: ", arrival_time)
+                        #print(f"\tInference Departure: {inference_departure_station} - Inference Arrival: {inference_arrival_station}")
+                        other_departure_time = infer_times(other_service,
+                                                           inference_departure_station,
+                                                           origin=True)
+                        other_arrival_time  = infer_times(other_service,
+                                                          inference_arrival_station,
+                                                          origin=False)
+
+                        original_departure_time = infer_times(service, inference_departure_station, origin=True)
+                        original_arrival_time = infer_times(service, inference_arrival_station, origin=False)
+
+                        dt_gap = other_departure_time - original_departure_time
+                        at_gap = other_arrival_time - original_arrival_time
+                        #print("Original DT: ", original_departure_time)
+                        #print("Original AT: ", original_arrival_time)
+                        #print("Other DT: ", other_departure_time)
+                        #print("Other AT: ", other_arrival_time)
                         #print(f"DT gap: {dt_gap}")
                         #print(f"AT gap: {at_gap}")
 
                         same_sign = lambda x, y: x * y > 0
                         if same_sign(dt_gap, at_gap) and all(abs(t) >= 2* self.safe_headway for t in (dt_gap, at_gap)):
-                            # print(f"No conflict detected")
+                            #print(f"No conflict detected")
                             continue
                         else:
-                            # print(f"Conflict detected")
+                            #print(f"Conflict detected")
                             conflict_matrix[i, j] = True
                             conflict_matrix[j, i] = True
 

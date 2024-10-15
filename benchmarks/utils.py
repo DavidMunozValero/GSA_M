@@ -382,7 +382,6 @@ def plot_marey_chart(requested_supply: Supply,
     max_x = 0
     color_idx = 0
     schedule_data = get_schedule_from_supply(supply=requested_supply)
-    print(schedule_data)
     labels_added = set()
     # Set default color for requested services
     requested_color = '#D3D3D3'
