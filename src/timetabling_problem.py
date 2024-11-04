@@ -300,21 +300,8 @@ class MPTT:
         for i, service in enumerate(self.requested_schedule):
             if S_i[i] == 0:
                 continue
-            original_service_times = tuple(self.requested_schedule[service].values())
-            updated_service_times = tuple(self.updated_schedule[service].values())
-            for j in range(len(original_service_times) - 1):
-                # Travel time feasibility
-                original_tt = original_service_times[j + 1][0] - original_service_times[j][1]
-                updated_tt = updated_service_times[j + 1][0] - updated_service_times[j][1]
-                if updated_tt < original_tt:
-                    return False
-                if j == 0:
-                    continue
-                # Stop time feasibility
-                original_st = original_service_times[j][1] - original_service_times[j][0]
-                updated_st = updated_service_times[j][1] - updated_service_times[j][0]
-                if updated_st < original_st:
-                    return False
+            if not self.service_is_feasible(service):
+                return False
         return True
 
     def get_best_schedule(self, solution: list) -> np.array:
@@ -385,10 +372,9 @@ class MPTT:
         Returns:
             Tuple[float, int]: fitness and accuracy (0)
         """
-        timetable = Solution(real=solution, discrete=self.get_best_schedule(solution))
         self.update_schedule(solution)
         schedule = self.get_heuristic_schedule()
-        return self.get_revenue(Solution(real=solution, discrete=schedule), update_schedule=False)
+        return self.get_revenue(Solution(real=solution, discrete=schedule))
 
     def _update_dynamic_bounds(self, j, ot_idx, proposed_times, updated_boundaries):
         if j != len(self.requested_times) - 1 and self.dt_indexer[j + 1] == self.dt_indexer[j]:
@@ -464,28 +450,42 @@ class MPTT:
         dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service]['dt_max_penalty']
         return self.revenue[service]['canon'] - dt_penalty - np.sum(tt_penalties)
 
+    def service_is_feasible(self, service: str) -> bool:
+        original_service_times = tuple(self.requested_schedule[service].values())
+        updated_service_times = tuple(self.updated_schedule[service].values())
+        for j in range(len(original_service_times) - 1):
+            # Travel time feasibility
+            original_tt = original_service_times[j + 1][0] - original_service_times[j][1]
+            updated_tt = updated_service_times[j + 1][0] - updated_service_times[j][1]
+            if updated_tt < original_tt:
+                return False
+            if j == 0:
+                continue
+            # Stop time feasibility
+            original_st = original_service_times[j][1] - original_service_times[j][0]
+            updated_st = updated_service_times[j][1] - updated_service_times[j][0]
+            if updated_st < original_st:
+                return False
+        return True
+
+
     def get_revenue(self,
-                    solution: Solution,
-                    update_schedule: bool = True) -> int:
+                    solution: Solution
+                    ) -> float:
         """
         Get IM revenue.
 
         Args:
             solution (Solution): solution
-            update_schedule (bool): update schedule
 
         Returns:
             float: IM revenue
         """
-        if not self.is_feasible(solution, solution.discrete, update_schedule=False):
-            print(f"WARNING: Solution is not feasible.")
-        if update_schedule:
-            self.update_schedule(solution)
         S_i = solution.discrete
 
-        im_revenue = 0
+        im_revenue = 0.0
         for i, service in enumerate(self.requested_schedule):
-            if S_i[i]:
+            if S_i[i] and self.service_is_feasible(service):
                 im_revenue += self.get_service_revenue(service)
 
         if im_revenue > self.best_revenue:
@@ -555,14 +555,14 @@ class MPTT:
         train_combinations = self.truth_table(dim=self.n_services)
         self.feasible_schedules = list(filter(lambda S_i: self._departure_time_feasibility(S_i), train_combinations))
 
-    def update_schedule(self, solution: list):
+    def update_schedule(self, solution: np.array):
         """
         Update schedule with the solution
 
         Args:
             solution (Solution): solution
         """
-        departure_times = solution if solution else self.get_real_vars()
+        departure_times = solution if solution.any() else self.get_real_vars()
         dt_idx = 0
         for i, service in enumerate(self.updated_schedule):
             ot_idx = 0
