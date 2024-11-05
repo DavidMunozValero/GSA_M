@@ -372,6 +372,7 @@ class MPTT:
         Returns:
             Tuple[float, int]: fitness and accuracy (0)
         """
+        solution = np.array(solution, dtype=np.int32)
         self.update_schedule(solution)
         schedule = self.get_heuristic_schedule()
         return self.get_revenue(Solution(real=solution, discrete=schedule))
