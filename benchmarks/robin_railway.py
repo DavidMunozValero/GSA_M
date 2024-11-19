@@ -12,7 +12,7 @@ from robin.supply.entities import TimeSlot, Line, Service, Supply
 from typing import Any, List, Mapping, Tuple, Union
 
 from .utils import get_stations_positions
-from ..src.entities import Solution, Boundaries
+from src.entities import Solution, Boundaries
 
 
 class RevenueMaximization:
