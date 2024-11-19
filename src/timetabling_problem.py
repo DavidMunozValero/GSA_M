@@ -11,7 +11,7 @@ from robin.services_generator.utils import build_service
 from robin.supply.entities import TimeSlot, Line, Service, Supply
 from typing import Any, List, Mapping, Tuple, Union
 
-from ..benchmarks.utils import get_stations_positions
+from benchmarks.utils import get_stations_positions
 from .entities import Solution, Boundaries
 
 
