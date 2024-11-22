@@ -106,13 +106,15 @@ def sns_line_plot(df: pd.DataFrame,
                   y_label: str,
                   hue: Union[str, None] = None,
                   save_path: Union[Path, None] = None,
+                  x_limit: tuple = (-1, 100),
+                  y_limit: tuple = (-1, 4000),
                   fig_size: tuple = (10, 6)
                   ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
     ax.set_title(title, fontweight='bold', fontsize=18)
-    # ax.set_xlim(min(df[x_data]), max(df[x_data]))
-    # ax.set_ylim(min(df[y_data]), max(df[y_data]))
+    ax.set_xlim(x_limit)
+    ax.set_ylim(y_limit)
 
     sns.lineplot(ax=ax,
                  data=df,
