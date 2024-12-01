@@ -364,11 +364,13 @@ def plot_marey_chart(requested_supply: Supply,
                      main_title: str = "Diagrama de Marey",
                      plot_security_gaps: bool = False,
                      security_gap: int = 10,
+                     x_limits: tuple = (60, 26*60),
                      save_path: Union[Path, None] = None
                      ) -> None:
     requested_supply = requested_supply
     # TODO: Check if supply has multiple branches in corridor
-    line = infer_line_stations([line for line in requested_supply.lines])
+    path = requested_supply.corridors[0].paths[0][:-2]
+    line = {sta.id: sta.coords for sta in path}
     station_positions = get_stations_positions(line, scale=1000)
     qualitative_colors = sns.color_palette("pastel", 10)
     my_cmap = ListedColormap(sns.color_palette(qualitative_colors).as_hex())
@@ -380,8 +382,8 @@ def plot_marey_chart(requested_supply: Supply,
 
     fig, ax = plt.subplots(figsize=(15, 8))
 
-    min_x = 24 * 60
-    max_x = 0
+    min_x = 0
+    max_x = 24 * 60
     color_idx = 0
     schedule_data = get_schedule_from_supply(supply=requested_supply)
     labels_added = set()
@@ -451,10 +453,10 @@ def plot_marey_chart(requested_supply: Supply,
     ax.grid(True)
     ax.grid(True, color='#A9A9A9', alpha=0.3, zorder=1, linestyle='-', linewidth=1.0)
     # ax.set_xlim(round_to_nearest_half_hour(min_x - 10), round_to_nearest_half_hour(max_x + 10, round_down=False))
-    ax.set_xlim(60, 26*60)
+    ax.set_xlim(x_limits)
     ax.set_title(main_title, fontweight='bold', fontsize=24)
-    ax.set_xlabel('Hora (HH:MM)', fontsize=18)
-    ax.set_ylabel('Estaciones', fontsize=18)
+    ax.set_xlabel('Time (HH:MM)', fontsize=18)
+    ax.set_ylabel('Stations', fontsize=18)
 
     ax.legend()
     ax.xaxis.set_major_locator(MultipleLocator(60))
