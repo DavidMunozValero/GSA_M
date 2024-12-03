@@ -134,6 +134,15 @@ def sns_line_plot(df: pd.DataFrame,
         ax.spines[spn].set_linewidth(1.0)
         ax.spines[spn].set_color('#A9A9A9')
 
+    plt.legend(
+        loc='upper center',  # Base de la posición (arriba y centrada)
+        bbox_to_anchor=(0.5, -0.2),  # Desplazamiento debajo del área de la gráfica
+        ncol=2,  # Organiza la leyenda en dos columnas
+        frameon=True,  # Muestra el marco de la leyenda (opcional)
+    )
+
+    plt.tight_layout(rect=[0, 0.15, 1, 1])  # Ajusta los márgenes para incluir la leyenda debajo
+
     plt.show()
     if save_path:
         fig.savefig(save_path, format='pdf', dpi=300, bbox_inches='tight', transparent=True)
