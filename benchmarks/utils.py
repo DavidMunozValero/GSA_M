@@ -106,6 +106,7 @@ def sns_line_plot(df: pd.DataFrame,
                   y_label: str,
                   hue: Union[str, None] = None,
                   save_path: Union[Path, None] = None,
+                  legend_type: str = "",
                   x_limit: tuple = (-1, 100),
                   y_limit: tuple = (-1, 4000),
                   fig_size: tuple = (10, 6)
@@ -133,6 +134,18 @@ def sns_line_plot(df: pd.DataFrame,
         ax.spines[spn].set_visible(True)
         ax.spines[spn].set_linewidth(1.0)
         ax.spines[spn].set_color('#A9A9A9')
+
+    if legend_type == 'inside':
+        plt.legend(
+            loc='upper center',  # Base de la posición (arriba y centrada)
+            bbox_to_anchor=(0.5, -0.2),  # Desplazamiento debajo del área de la gráfica
+            ncol=2,  # Organiza la leyenda en dos columnas
+            frameon=True,  # Muestra el marco de la leyenda (opcional)
+        )
+    else:
+        plt.legend()
+
+    plt.tight_layout(rect=[0, 0.15, 1, 1])  # Ajusta los márgenes para incluir la leyenda debajo
 
     plt.show()
     if save_path:
