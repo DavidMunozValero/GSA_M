@@ -1,0 +1,302 @@
+stations:
+- id: Guadalajara
+  name: Guadalajara
+  city: Guadalajara
+  short_name: GUA
+  coordinates:
+    latitude: 40.6441032
+    longitude: -3.1822298
+- id: Barcelona
+  name: Barcelona-Sants
+  city: Barcelona
+  short_name: BAR
+  coordinates:
+    latitude: 41.37922
+    longitude: 2.140624
+- id: Girona
+  name: Girona
+  city: Girona
+  short_name: GIR
+  coordinates:
+    latitude: 41.979303
+    longitude: 2.817006
+- id: Tarragona
+  name: Tarragona
+  city: Tarragona
+  short_name: TAR
+  coordinates:
+    latitude: 41.111624
+    longitude: 1.253214
+- id: Lleida
+  name: Lleida
+  city: Lleida
+  short_name: LLE
+  coordinates:
+    latitude: 41.620696
+    longitude: 0.632669
+- id: Zaragoza
+  name: Zaragoza-Delicias
+  city: Zaragoza
+  short_name: ZAR
+  coordinates:
+    latitude: 41.658649
+    longitude: -0.911615
+- id: Madrid
+  name: Madrid-Puerta de Atocha
+  city: Madrid
+  short_name: MAD
+  coordinates:
+    latitude: 40.406442
+    longitude: -3.690886
+- id: Figueres
+  name: Figueres Vilafant
+  city: Figueres
+  short_name: FIG
+  coordinates:
+    latitude: 42.264771
+    longitude: 2.943547
+- id: Calatayud
+  name: Calatayud
+  city: Calatayud
+  short_name: CAL
+  coordinates:
+    latitude: 41.346692
+    longitude: -1.63868
+seat:
+- id: '1'
+  name: Turista
+  hard_type: 1
+  soft_type: 1
+- id: '2'
+  name: TuristaPlus
+  hard_type: 1
+  soft_type: 2
+- id: '3'
+  name: Premium
+  hard_type: 2
+  soft_type: 3
+corridor:
+- id: '1'
+  name: Corredor Noreste
+  stations:
+  - org: Madrid
+    des:
+    - org: Guadalajara
+      des:
+      - org: Calatayud
+        des:
+        - org: Zaragoza
+          des:
+          - org: Lleida
+            des:
+            - org: Tarragona
+              des:
+              - org: Barcelona
+                des:
+                - org: Girona
+                  des:
+                  - org: Figueres
+                    des: []
+line:
+- id: Line_0
+  name: MAD - LLE
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Lleida
+    arrival_time: 95.0
+    departure_time: 95.0
+- id: Line_1
+  name: ZAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 70.0
+    departure_time: 70.0
+- id: Line_2
+  name: MAD - CAL - LLE - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Calatayud
+    arrival_time: 50.0
+    departure_time: 54.0
+  - station: Lleida
+    arrival_time: 130.0
+    departure_time: 134.0
+  - station: Barcelona
+    arrival_time: 200.0
+    departure_time: 200.0
+rollingStock:
+- id: '13'
+  name: RU1 RS3
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '12'
+  name: RU1 RS2
+  seats:
+  - hard_type: 1
+    quantity: 250
+  - hard_type: 2
+    quantity: 50
+- id: '32'
+  name: RU2 RS2
+  seats:
+  - hard_type: 2
+    quantity: 450
+- id: '11'
+  name: RU1 RS1
+  seats:
+  - hard_type: 1
+    quantity: 200
+  - hard_type: 2
+    quantity: 50
+- id: '21'
+  name: RU2 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+- id: '31'
+  name: RU2 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '22'
+  name: RU2 RS2
+  seats:
+  - hard_type: 1
+    quantity: 350
+trainServiceProvider:
+- id: '1'
+  name: Service 1
+  rolling_stock:
+  - '11'
+  - '12'
+  - '13'
+- id: '2'
+  name: Service 2
+  rolling_stock:
+  - '21'
+  - '22'
+- id: '3'
+  name: Service 3
+  rolling_stock:
+  - '31'
+  - '32'
+timeSlot:
+- id: '1'
+  start: '17:50:00'
+  end: '18:00:00'
+- id: '2'
+  start: '20:20:00'
+  end: '20:30:00'
+- id: '3'
+  start: '18:00:00'
+  end: '18:10:00'
+service:
+- id: 0_2024-06-25-18.00
+  date: '2024-06-25'
+  line: Line_0
+  train_service_provider: '1'
+  time_slot: '1'
+  rolling_stock: '11'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: 18.06
+    - seat: '2'
+      price: 21.67
+  capacity_constraints: null
+- id: 1_2024-06-25-18.20
+  date: '2024-06-25'
+  line: Line_1
+  train_service_provider: '2'
+  time_slot: '2'
+  rolling_stock: '21'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: 23.58
+    - seat: '2'
+      price: 28.29
+    - seat: '3'
+      price: 37.72
+  capacity_constraints: null
+- id: 2_2024-06-25-19.50
+  date: '2024-06-25'
+  line: Line_2
+  train_service_provider: '3'
+  time_slot: '3'
+  rolling_stock: '31'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Calatayud
+    seats:
+    - seat: '1'
+      price: 52.64
+    - seat: '2'
+      price: 63.17
+    - seat: '3'
+      price: 84.22
+  - origin: Madrid
+    destination: Lleida
+    seats:
+      - seat: '1'
+        price: 52.64
+      - seat: '2'
+        price: 63.17
+      - seat: '3'
+        price: 84.22
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+      - seat: '1'
+        price: 52.64
+      - seat: '2'
+        price: 63.17
+      - seat: '3'
+        price: 84.22
+  - origin: Calatayud
+    destination: Lleida
+    seats:
+      - seat: '1'
+        price: 52.64
+      - seat: '2'
+        price: 63.17
+      - seat: '3'
+        price: 84.22
+  - origin: Calatayud
+    destination: Barcelona
+    seats:
+      - seat: '1'
+        price: 52.64
+      - seat: '2'
+        price: 63.17
+      - seat: '3'
+        price: 84.22
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+      - seat: '1'
+        price: 52.64
+      - seat: '2'
+        price: 63.17
+      - seat: '3'
+        price: 84.22
+  capacity_constraints: null
