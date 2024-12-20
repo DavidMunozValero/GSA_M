@@ -149,20 +149,6 @@ rollingStock:
     quantity: 250
   - hard_type: 2
     quantity: 50
-- id: '42'
-  name: RU3 RS2
-  seats:
-  - hard_type: 1
-    quantity: 350
-  - hard_type: 2
-    quantity: 50
-- id: '41'
-  name: RU3 RS1
-  seats:
-  - hard_type: 1
-    quantity: 300
-  - hard_type: 2
-    quantity: 50
 - id: '32'
   name: RU2 RS2
   seats:
@@ -194,23 +180,18 @@ rollingStock:
     quantity: 350
 trainServiceProvider:
 - id: '1'
-  name: RU1
+  name: Service 1
   rolling_stock:
   - '11'
   - '12'
   - '13'
 - id: '2'
-  name: RU2
+  name: Service 2
   rolling_stock:
   - '21'
   - '22'
 - id: '3'
-  name: RU3
-  rolling_stock:
-  - '41'
-  - '42'
-- id: '4'
-  name: RU4
+  name: Service 3
   rolling_stock:
   - '31'
   - '32'
@@ -228,9 +209,9 @@ service:
 - id: 0_2024-06-25-18.00
   date: '2024-06-25'
   line: Line_0
-  train_service_provider: '2'
+  train_service_provider: '1'
   time_slot: '1'
-  rolling_stock: '21'
+  rolling_stock: '11'
   origin_destination_tuples:
   - origin: Madrid
     destination: Lleida
@@ -243,9 +224,9 @@ service:
 - id: 1_2024-06-25-18.20
   date: '2024-06-25'
   line: Line_1
-  train_service_provider: '3'
+  train_service_provider: '2'
   time_slot: '2'
-  rolling_stock: '41'
+  rolling_stock: '21'
   origin_destination_tuples:
   - origin: Zaragoza
     destination: Barcelona
@@ -260,9 +241,9 @@ service:
 - id: 2_2024-06-25-19.50
   date: '2024-06-25'
   line: Line_2
-  train_service_provider: '1'
+  train_service_provider: '3'
   time_slot: '3'
-  rolling_stock: '11'
+  rolling_stock: '31'
   origin_destination_tuples:
   - origin: Madrid
     destination: Calatayud
