@@ -160,7 +160,11 @@ def get_revenue_behaviour_deprecated(supply: Supply) -> Mapping[str, Mapping[str
         max_penalty = canon * 0.4
         dt_penalty = np.round(max_penalty * 0.35, 2)
         tt_penalty = np.round((max_penalty - dt_penalty) / (len(service.line.stations) - 1), 2)
-        revenue[service.id] = {'canon': canon, 'k': k, 'dt_max_penalty': dt_penalty, 'tt_max_penalty': tt_penalty}
+        revenue[service.id] = {'canon': canon,
+                               'ru': service.tsp.id,
+                               'k': k,
+                               'dt_max_penalty': dt_penalty,
+                               'tt_max_penalty': tt_penalty}
     return revenue
 
 

@@ -45,6 +45,7 @@ class MPTT:
 
         self.n_services = len(self.requested_schedule)
         self.operational_times = self.get_operational_times()
+        self.capacities = self.get_capacities()
 
         service_indexer = []
         reference_solution = []
@@ -66,6 +67,17 @@ class MPTT:
         self.rev_indexer = {idx: sch for idx, sch in enumerate(self.requested_schedule)}
         self.requested_times = self.get_real_vars()
         self.scheduled_trains = np.zeros(self.n_services, dtype=np.bool_)
+
+    def get_capacities(self):
+        services_by_ru = {}
+
+        for service in self.revenue:
+            if self.revenue[service]['ru'] not in services_by_ru:
+                services_by_ru[self.revenue[service]['ru']] = 1
+            else:
+                services_by_ru[self.revenue[service]['ru']] += 1
+
+        return {ru: services_by_ru[ru] / self.n_services * 100 for ru in services_by_ru}
 
     def update_supply(self, path: Path,
                       solution: Solution
@@ -324,6 +336,11 @@ class MPTT:
                 best_schedule = fs
         return np.array(best_schedule)
 
+    def get_service_equity(self, scheduled, service):
+        scheduled[tuple(self.updated_schedule.keys()).index(service)] = 1
+        fair_index, ratios = self.jains_fairness_index(scheduled, self.capacities)
+        return fair_index
+
     def get_heuristic_schedule(self) -> np.array:
         """
         Get best schedule using the heuristic approach.
@@ -333,22 +350,36 @@ class MPTT:
 
         CaSP: Conflict-avoiding Sequential Planner
         1) Schedule services without conflicts by checking the conflict matrices.
-        2) Get dictionary of services with conflicts and their revenue based on the updated schedule
+        2) Get dictionary of services with conflicts
         3) While there are services with conflicts:
-            3.1) Get service 's' with the best revenue, and schedule it
+            3.1) Get RU with the worst equity ratio
+            3.2) Get sorted services by equity improvement (based on fair_index)
+            3.3) Schedule service 's' with the equity improvement
             3.2) Get set of services that have conflict with service 's'
             3.3) Update conflicts dictionary by removing services that have conflict with service 's'
                  (including 's')
         """
         # self.update_schedule(timetable)
         default_planner = np.array([(~cm).all() for cm in self.conflict_matrix], dtype=np.bool_)
-        conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
-        conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
-        conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
+        master_conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
 
-        while conflicts_revenue:
+        while master_conflicts:
+            # Obtener equidades
+            fair_index, ratios = self.jains_fairness_index(default_planner, self.capacities)
+
+            conflicts = {}
+            while not conflicts:
+                # Obtener RU más perjudicado
+                min_ru = min(ratios, key=ratios.get)
+                # Mejorar equidad
+                conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]] and self.revenue[sch]['ru'] == min_ru)
+                ratios.pop(min_ru)
+
+            conflicts_equity = {sc: self.get_service_equity(default_planner.copy(), sc) for sc in conflicts}
+            conflicts_equity = dict(sorted(conflicts_equity.items(), key=lambda item: item[1]))
+
             # Get service 's' with the best revenue, and schedule it
-            s, _ = conflicts_revenue.popitem()
+            s, _ = conflicts_equity.popitem()
             default_planner[self.indexer[s]] = True
 
             # Get set of services that have conflict with service 's'
@@ -356,7 +387,7 @@ class MPTT:
             conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
 
             # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
-            conflicts_revenue = dict(filter(lambda p: p[0] not in conflicts_with_s, conflicts_revenue.items()))
+            master_conflicts = set(filter(lambda p: p not in conflicts_with_s, master_conflicts))
 
         return default_planner
 
@@ -375,7 +406,8 @@ class MPTT:
         solution = np.array(solution, dtype=np.int32)
         self.update_schedule(solution)
         schedule = self.get_heuristic_schedule()
-        return self.get_revenue(Solution(real=solution, discrete=schedule))
+        fair_index, _ = self.jains_fairness_index(schedule, self.capacities)
+        return self.get_revenue(Solution(real=solution, discrete=schedule)) * fair_index
 
     def _update_dynamic_bounds(self, j, ot_idx, proposed_times, updated_boundaries):
         if j != len(self.requested_times) - 1 and self.dt_indexer[j + 1] == self.dt_indexer[j]:
@@ -468,6 +500,52 @@ class MPTT:
             if updated_st < original_st:
                 return False
         return True
+
+    def jains_fairness_index(self,
+                             bool_scheduled: List[bool],
+                             capacities: Mapping[int, float]
+                             ) -> Tuple[float, Mapping[int, float]]:
+        """
+        Calcula el índice de equidad de Jain ponderado, evaluando la equidad
+        en función de la razón entre el recurso asignado y la capacidad de cada usuario.
+
+        Parámetros:
+            values (list o iterable de números): Recursos asignados a cada usuario.
+            capacities (list o iterable de números): Capacidad o peso correspondiente a cada usuario.
+
+        Retorna:
+            float: El índice de equidad de Jain, que varía entre 0 y 1.
+        """
+
+        # Diccionario con claves RUs, y valores nº de servicios planificados de cada RU
+        scheduled = {}
+        for service, Si in zip(self.revenue, bool_scheduled):
+            if self.revenue[service]['ru'] not in scheduled:
+                scheduled[self.revenue[service]['ru']] = 0
+
+            if Si:
+                scheduled[self.revenue[service]['ru']] += 1
+
+        if len(scheduled) == 0:
+            raise ValueError("La lista de recursos no puede estar vacía.")
+        if len(scheduled) != len(capacities):
+            raise ValueError("Las listas de recursos y capacidades deben tener la misma longitud.")
+
+        # Calcular la razón (recurso/capacidad) para cada usuario.
+        # Se controla que ninguna capacidad sea cero.
+        ratios = {}
+        for ru in capacities:
+            ratios[ru] = scheduled[ru] / capacities[ru]
+
+        n = len(ratios)
+        suma = sum(ratios.values())
+        suma_cuadrados = sum(x ** 2 for x in ratios.values())
+
+        if suma_cuadrados == 0:
+            return 0
+
+        indice = (suma ** 2) / (n * suma_cuadrados)
+        return indice, ratios
 
 
     def get_revenue(self,
