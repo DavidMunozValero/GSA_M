@@ -341,7 +341,64 @@ class MPTT:
         fair_index, ratios = self.jains_fairness_index(scheduled, self.capacities)
         return fair_index
 
-    def get_heuristic_schedule(self) -> np.array:
+    def get_heuristic_schedule_new(self) -> np.array:
+        """
+        Obtiene la mejor planificación utilizando la nueva heurística basada en la mejora
+        de equidad para la RU más perjudicada.
+
+        Devuelve:
+            np.array: planificación final (array booleano)
+        """
+        # Planificar inicialmente aquellos servicios sin conflictos.
+        default_planner = np.array([(~cm).all() for cm in self.conflict_matrix], dtype=bool)
+
+        # master_conflicts: conjunto de servicios que inicialmente no están planificados.
+        master_conflicts = set(
+            sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]]
+        )
+
+        while master_conflicts:
+            # Calcular el índice de equidad y los ratios actuales usando la planificación actual.
+            fair_index, ratios = self.jains_fairness_index(default_planner, self.capacities)
+
+            # Se busca, entre los servicios pendientes, aquellos que pertenezcan a la RU más perjudicada.
+            conflicts = {}
+            # Iteramos sobre las RUs ordenadas de peor a mejor ratio.
+            for ru in sorted(ratios, key=ratios.get):
+                conflicts = {sch for sch in master_conflicts if self.revenue[sch]['ru'] == ru}
+                if conflicts:
+                    break  # Hemos encontrado servicios conflictivos para la RU en cuestión.
+
+            # Si para ninguna RU quedan servicios, se termina el bucle.
+            if not conflicts:
+                break
+
+            # Para cada servicio candidato, se calcula la mejora en equidad que aportaría su inclusión.
+            conflicts_equity = {
+                sc: self.get_service_equity(default_planner.copy(), sc) for sc in conflicts
+            }
+            # Ordenamos de mayor a menor mejora en equidad (así, popitem() extraerá el que aporta mayor mejora)
+            conflicts_equity = dict(
+                sorted(conflicts_equity.items(), key=lambda item: item[1], reverse=True)
+            )
+
+            # Seleccionar el servicio 's' con mayor mejora en equidad.
+            s, _ = conflicts_equity.popitem()
+            default_planner[self.indexer[s]] = True  # Se planifica el servicio 's'.
+
+            # Eliminar 's' del conjunto de servicios pendientes (por si no se elimina a continuación).
+            master_conflicts.discard(s)
+
+            # Obtener el conjunto de servicios que tienen conflicto con 's'.
+            conflicts_with_s = np.where(self.conflict_matrix[self.indexer[s]])[0]
+            conflicts_with_s = {self.rev_indexer[idx] for idx in conflicts_with_s}
+
+            # Actualizar master_conflicts: se eliminan los servicios que entran en conflicto con 's'.
+            master_conflicts = master_conflicts - conflicts_with_s
+
+        return default_planner
+
+    def get_heuristic_schedule_old(self) -> np.array:
         """
         Get best schedule using the heuristic approach.
 
@@ -350,36 +407,22 @@ class MPTT:
 
         CaSP: Conflict-avoiding Sequential Planner
         1) Schedule services without conflicts by checking the conflict matrices.
-        2) Get dictionary of services with conflicts
+        2) Get dictionary of services with conflicts and their revenue based on the updated schedule
         3) While there are services with conflicts:
-            3.1) Get RU with the worst equity ratio
-            3.2) Get sorted services by equity improvement (based on fair_index)
-            3.3) Schedule service 's' with the equity improvement
+            3.1) Get service 's' with the best revenue, and schedule it
             3.2) Get set of services that have conflict with service 's'
             3.3) Update conflicts dictionary by removing services that have conflict with service 's'
                  (including 's')
         """
         # self.update_schedule(timetable)
         default_planner = np.array([(~cm).all() for cm in self.conflict_matrix], dtype=np.bool_)
-        master_conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
+        conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]])
+        conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
+        conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
 
-        while master_conflicts:
-            # Obtener equidades
-            fair_index, ratios = self.jains_fairness_index(default_planner, self.capacities)
-
-            conflicts = {}
-            while not conflicts:
-                # Obtener RU más perjudicado
-                min_ru = min(ratios, key=ratios.get)
-                # Mejorar equidad
-                conflicts = set(sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]] and self.revenue[sch]['ru'] == min_ru)
-                ratios.pop(min_ru)
-
-            conflicts_equity = {sc: self.get_service_equity(default_planner.copy(), sc) for sc in conflicts}
-            conflicts_equity = dict(sorted(conflicts_equity.items(), key=lambda item: item[1]))
-
+        while conflicts_revenue:
             # Get service 's' with the best revenue, and schedule it
-            s, _ = conflicts_equity.popitem()
+            s, _ = conflicts_revenue.popitem()
             default_planner[self.indexer[s]] = True
 
             # Get set of services that have conflict with service 's'
@@ -387,7 +430,7 @@ class MPTT:
             conflicts_with_s = set(self.rev_indexer[conflict] for conflict in conflicts_with_s)
 
             # Update conflicts dictionary by removing services that have conflict with service 's' (including 's')
-            master_conflicts = set(filter(lambda p: p not in conflicts_with_s, master_conflicts))
+            conflicts_revenue = dict(filter(lambda p: p[0] not in conflicts_with_s, conflicts_revenue.items()))
 
         return default_planner
 
@@ -405,7 +448,7 @@ class MPTT:
         """
         solution = np.array(solution, dtype=np.int32)
         self.update_schedule(solution)
-        schedule = self.get_heuristic_schedule()
+        schedule = self.get_heuristic_schedule_new()
         fair_index, _ = self.jains_fairness_index(schedule, self.capacities)
         return self.get_revenue(Solution(real=solution, discrete=schedule)) * fair_index
 

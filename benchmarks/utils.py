@@ -106,7 +106,7 @@ def sns_line_plot(df: pd.DataFrame,
                   y_label: str,
                   hue: Union[str, None] = None,
                   save_path: Union[Path, None] = None,
-                  legend_type: str = "",
+                  legend_type: str = "outside",
                   x_limit: tuple = (-1, 100),
                   y_limit: tuple = (-1, 4000),
                   fig_size: tuple = (10, 6)
@@ -135,7 +135,7 @@ def sns_line_plot(df: pd.DataFrame,
         ax.spines[spn].set_linewidth(1.0)
         ax.spines[spn].set_color('#A9A9A9')
 
-    if legend_type == 'inside':
+    if legend_type == 'outside':
         plt.legend(
             loc='upper center',  # Base de la posición (arriba y centrada)
             bbox_to_anchor=(0.5, -0.2),  # Desplazamiento debajo del área de la gráfica
@@ -143,7 +143,8 @@ def sns_line_plot(df: pd.DataFrame,
             frameon=True,  # Muestra el marco de la leyenda (opcional)
         )
     else:
-        plt.legend()
+        # Inside, bottom right
+        plt.legend(loc='lower right')
 
     plt.tight_layout(rect=[0, 0.15, 1, 1])  # Ajusta los márgenes para incluir la leyenda debajo
 
@@ -388,7 +389,7 @@ def plot_marey_chart(requested_supply: Supply,
     qualitative_colors = sns.color_palette("pastel", 10)
     my_cmap = ListedColormap(sns.color_palette(qualitative_colors).as_hex())
 
-    tsps = set([service.tsp.name for service in requested_supply.services])
+    tsps = sorted(set([service.tsp.name for service in requested_supply.services]))
     services_dict = {service.id: service for service in requested_supply.services}
     tsp_colors = {tsp: my_cmap(i) for i, tsp in enumerate(tsps)}
     service_color = {service.id: tsp_colors[service.tsp.name] for service in requested_supply.services}
