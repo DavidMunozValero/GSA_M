@@ -41,6 +41,7 @@ class MPTT:
         self.line = line
 
         self.safe_headway = safe_headway
+        self.im_mod_margin = 60
         self.max_stop_time = max_stop_time
 
         self.n_services = len(self.requested_schedule)
@@ -146,14 +147,14 @@ class MPTT:
             ot_idx = 0
             for i in range(len(stops) - 1):
                 if i == 0:
-                    lower_bound = self.requested_schedule[service][stops[i]][1] - self.safe_headway
-                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.safe_headway
+                    lower_bound = self.requested_schedule[service][stops[i]][1] - self.im_mod_margin
+                    upper_bound = self.requested_schedule[service][stops[i]][1] + self.im_mod_margin
                 else:
                     travel_time = self.operational_times[service][ot_idx]
                     stop_time = self.operational_times[service][ot_idx + 1]
                     ot_idx += 2
                     lower_bound = self.updated_schedule[service][stops[i - 1]][1] + travel_time + stop_time
-                    max_dt_original = self.requested_schedule[service][stops[i]][1] + self.safe_headway
+                    max_dt_original = self.requested_schedule[service][stops[i]][1] + self.max_stop_time
                     max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
                     upper_bound = min(max_dt_original, max_dt_updated)
                 boundaries.append([lower_bound, upper_bound])
@@ -435,21 +436,27 @@ class MPTT:
         return default_planner
 
     def objective_function(self,
-                           solution: List[float]) -> float:
+                           solution: List[float],
+                           equity: bool = True) -> float:
         """
-        Get fitness
+        Get fitness. If equity is True, the fitness is multiplied by the Jain's fairness index.
+        If equity is False, the fitness is the revenue.
 
         Args:
-            timetable (Solution): solution
-            heuristic_schedule (bool): heuristic schedule
+            solution (List[float]): solution
+            equity (bool): equity
 
         Returns:
-            Tuple[float, int]: fitness and accuracy (0)
+            float: fitness
         """
         solution = np.array(solution, dtype=np.int32)
         self.update_schedule(solution)
         schedule = self.get_heuristic_schedule_new()
-        fair_index, _ = self.jains_fairness_index(schedule, self.capacities)
+        if equity:
+            fair_index, _ = self.jains_fairness_index(schedule, self.capacities)
+        else:
+            fair_index = 1
+
         return self.get_revenue(Solution(real=solution, discrete=schedule)) * fair_index
 
     def _update_dynamic_bounds(self, j, ot_idx, proposed_times, updated_boundaries):
@@ -458,7 +465,7 @@ class MPTT:
             stop_time = self.operational_times[self.dt_indexer[j]][ot_idx + 1]
             ot_idx += 2
             lower_bound = proposed_times[j] + travel_time + stop_time
-            max_dt_original = self.requested_times[j + 1] + self.safe_headway
+            max_dt_original = self.requested_times[j + 1] + self.im_mod_margin
             max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
             upper_bound = min(max_dt_original, max_dt_updated)
             updated_boundaries[j + 1] = (lower_bound, upper_bound)
@@ -521,9 +528,9 @@ class MPTT:
                 continue
             tt_penalty = self.penalty_function(abs(
                 self.updated_schedule[service][stop][1] - self.requested_schedule[service][stop][
-                    1]) / self.safe_headway, k)
+                    1]) / self.im_mod_margin, k)
             tt_penalties.append(tt_penalty * self.revenue[service]['tt_max_penalty'])
-        dt_penalty = self.penalty_function(departure_time_delta / self.safe_headway, k) * self.revenue[service]['dt_max_penalty']
+        dt_penalty = self.penalty_function(departure_time_delta / self.im_mod_margin, k) * self.revenue[service]['dt_max_penalty']
         return self.revenue[service]['canon'] - dt_penalty - np.sum(tt_penalties)
 
     def service_is_feasible(self, service: str) -> bool:
