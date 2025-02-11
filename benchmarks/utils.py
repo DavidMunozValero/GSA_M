@@ -337,8 +337,6 @@ def get_services_by_tsp_df(services: List[Service]) -> pd.DataFrame:
         else:
             services_by_tsp[services[service].tsp.name] += 1
 
-    # Append row with Total (Sum of "Number of Services" column)
-    services_by_tsp['Total'] = sum(services_by_tsp.values())
     df = pd.DataFrame.from_dict(services_by_tsp, orient='index', columns=['Number of Services'])
     return df
 

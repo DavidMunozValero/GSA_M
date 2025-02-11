@@ -21,7 +21,7 @@ class RevenueMaximization:
     """
     def __init__(self,
                  requested_schedule: Mapping[str, Mapping[str, Any]],
-                 revenue_behaviour: Mapping[str, Mapping[str, float]],
+                 revenue_behavior: Mapping[str, Mapping[str, float]],
                  line: Mapping[str, Tuple[float, float]],
                  safe_headway: int = 10,
                  max_stop_time: int = 10
@@ -31,13 +31,13 @@ class RevenueMaximization:
 
         Args:
             requested_schedule (Mapping[str, List[str, Tuple[float, float]]]): requested schedule
-            revenue_behaviour (Mapping[str, Mapping[str, float]]): revenue
+            revenue_behavior (Mapping[str, Mapping[str, float]]): revenue
             safe_headway (int): safe headway
             max_stop_time (int): max stop time
         """
         self.requested_schedule = requested_schedule
         self.line_stations = get_stations_positions(line)
-        self.revenue = revenue_behaviour
+        self.revenue = revenue_behavior
         self.line = line
         self.safe_headway = safe_headway
         self.max_stop_time = max_stop_time

@@ -2,10 +2,12 @@
 
 import numpy as np
 
+from collections import defaultdict
 from geopy.distance import geodesic
-from robin.supply.entities import Supply
 from scipy.stats import loguniform
-from typing import List, Mapping, Tuple, Union
+from typing import Dict, List, Mapping, Tuple, Union
+
+from robin.supply.entities import Supply
 
 
 def get_lines(corridor: Mapping[str, Mapping],
@@ -106,17 +108,17 @@ def get_schedule_request(corridor: Mapping[str, Mapping],
     return schedule_request
 
 
-def get_revenue_behaviour(supply: Supply,
+def get_revenue_behavior(supply: Supply,
                           alpha: float = 2/3) -> Mapping[str, Mapping[str, float]]:
     """
-    Get revenue behaviour
+    Get revenue behavior
 
     Args:
         supply (Supply): supply.
         alpha (float): alpha to adjust canon by 100 passengers.
 
     Returns:
-        Mapping[int, Mapping[str, float]]: revenue behaviour.
+        Mapping[int, Mapping[str, float]]: revenue behavior.
     """
     revenue = {}
     tsp_k = {}
@@ -140,45 +142,109 @@ def get_revenue_behaviour(supply: Supply,
     return revenue
 
 
-def get_revenue_behaviour_deprecated(supply: Supply) -> Mapping[str, Mapping[str, float]]:
+def get_revenue_behavior_deprecated(supply: Supply) -> Mapping[str, Dict[str, float]]:
     """
-    Get revenue behaviour
+    Calculate revenue behavior parameters for each service in the supply.
+
+    For every service in the supply, this function computes:
+      - canon: The base revenue increased by a randomly selected bias factor.
+      - k: A random scaling factor drawn from a log-uniform distribution.
+      - dt_max_penalty: A penalty value derived from the canon.
+      - tt_max_penalty: A penalty value distributed across the service's stations.
+      - importance: A normalized random weight assigned to the service within its RU group.
+
+    The services are first grouped by their associated RU (Transport Service Provider).
+    Then, for each group, a set of random values is generated and normalized so that the
+    sum of importance values in each group is 1. Finally, these importance values are assigned
+    to the corresponding services.
 
     Args:
-        supply (Supply): supply.
+        supply (Supply): An object containing a list of services. Each service is expected to have:
+            - service.id: A unique identifier for the service.
+            - service.line.stations: A collection (e.g., list) of stations.
+            - service.tsp.id: The identifier of the associated RU.
 
     Returns:
-        Mapping[int, Mapping[str, float]]: revenue behaviour.
+        Mapping[str, Dict[str, float]]:
+            A dictionary mapping each service's ID to a dictionary of computed revenue parameters.
+            Each dictionary contains:
+                - 'canon': Computed base revenue (float).
+                - 'ru': The RU identifier (same as service.tsp.id).
+                - 'k': A random scaling factor (float).
+                - 'dt_max_penalty': Penalty value for DT (float).
+                - 'tt_max_penalty': Penalty value for TT (float).
+                - 'importance': Normalized importance weight (float) within its RU group.
     """
-    revenue = {}
-    bias = [0.2, 0.35, 0.1]
+    # Predefined bias values for revenue calculation
+    bias_options = [0.2, 0.35, 0.1]
+
+    # Dictionaries to hold the computed revenue parameters and group services by RU.
+    revenue_by_service: Dict[str, Dict[str, float]] = {}
+    services_by_ru: Dict[str, list] = defaultdict(list)
+
+    # Compute revenue parameters for each service and group by RU.
     for service in supply.services:
-        b = np.random.choice(bias)
-        base_price = 55 * len(service.line.stations)
-        canon = base_price + b * base_price
-        k = np.round(loguniform.rvs(0.01, 100, 1), 2)
+        # Randomly select a bias factor
+        bias = np.random.choice(bias_options)
+
+        # Compute the base price using the number of stations
+        num_stations = len(service.line.stations)
+        base_price = 55 * num_stations
+
+        # Compute the canon as the base price increased by the bias factor
+        canon = base_price * (1 + bias)
+
+        # Generate a random scaling factor 'k' using a log-uniform distribution
+        k = float(np.round(loguniform.rvs(0.01, 100, size=1), 2))
+
+        # Calculate penalties based on the canon
         max_penalty = canon * 0.4
-        dt_penalty = np.round(max_penalty * 0.35, 2)
-        tt_penalty = np.round((max_penalty - dt_penalty) / (len(service.line.stations) - 1), 2)
-        revenue[service.id] = {'canon': canon,
-                               'ru': service.tsp.id,
-                               'k': k,
-                               'dt_max_penalty': dt_penalty,
-                               'tt_max_penalty': tt_penalty}
-    return revenue
+        dt_max_penalty = float(np.round(max_penalty * 0.35, 2))
+        # Avoid division by zero if there is only one station
+        tt_max_penalty = (
+            float(np.round((max_penalty - dt_max_penalty) / (num_stations - 1), 2))
+            if num_stations > 1 else 0.0
+        )
+
+        # Identify the RU for the service
+        ru_id = service.tsp.id
+
+        # Store computed revenue parameters for this service
+        revenue_by_service[service.id] = {
+            'canon': canon,
+            'ru': ru_id,
+            'k': k,
+            'dt_max_penalty': dt_max_penalty,
+            'tt_max_penalty': tt_max_penalty,
+        }
+
+        # Group the service IDs by their RU
+        services_by_ru[ru_id].append(service.id)
+
+    # For each RU group, generate normalized random importance values and assign them to services.
+    for ru_id, service_ids in services_by_ru.items():
+        num_services = len(service_ids)
+        # Generate random values and normalize them so they sum to 1
+        random_values = np.random.random(num_services)
+        normalized_importance = random_values / random_values.sum()
+
+        for idx, service_id in enumerate(service_ids):
+            revenue_by_service[service_id]['importance'] = float(normalized_importance[idx])
+
+    return revenue_by_service
 
 
-def get_revenue_behaviour_old(services: Mapping,
+def get_revenue_behavior_old(services: Mapping,
                               alpha: float = 2/3) -> Mapping[str, Mapping[str, float]]:
     """
-    Get revenue behaviour
+    Get revenue behavior
 
     Args:
         supply (Supply): supply.
         alpha (float): alpha to adjust canon by 100 passengers.
 
     Returns:
-        Mapping[int, Mapping[str, float]]: revenue behaviour.
+        Mapping[int, Mapping[str, float]]: revenue behavior.
     """
     revenue = {}
     for service in services:
