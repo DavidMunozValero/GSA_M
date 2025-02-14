@@ -464,22 +464,21 @@ class MPTT:
             ru = self.revenue[service]["ru"]
             scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
 
-        for ru in scheduled:
-            scheduled[ru] *= self.services_by_ru[ru]
-
         if not scheduled:
             raise ValueError("Scheduled resources list cannot be empty.")
         if len(scheduled) != len(capacities):
             raise ValueError("Resources and capacities must have the same length.")
 
-        ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
+        ratios = scheduled
+        alpha = 10  # Aumentar la sensibilidad
+        ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
         n = len(ratios)
         sum_ratios = sum(ratios.values())
         sum_squares = sum(x ** 2 for x in ratios.values())
         if sum_squares == 0:
             return 0.0, ratios
         fairness = (sum_ratios ** 2) / (n * sum_squares)
-        return fairness, ratios
+        return fairness, scheduled
 
     def gini_fairness_index(
             self, bool_scheduled: List[bool], capacities: Mapping[Any, float]
@@ -504,6 +503,7 @@ class MPTT:
             # Se suma la "importancia" si el servicio está programado.
             scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
 
+        print("Scheduled: ", scheduled)
         # Multiplicar cada recurso programado por el factor correspondiente de services_by_ru.
         for ru in scheduled:
             scheduled[ru] *= self.services_by_ru[ru]
@@ -515,6 +515,7 @@ class MPTT:
 
         # Calcular los ratios: recurso asignado / capacidad
         ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
+        print("Ratios: ", ratios)
 
         # Convertir los valores de ratios a una lista para calcular el Gini.
         values = list(ratios.values())
