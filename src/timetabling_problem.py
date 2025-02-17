@@ -444,6 +444,24 @@ class MPTT:
                     return False
         return True
 
+    def sum_importance(self, bool_scheduled: List[bool]) -> Mapping[Any, float]:
+        """
+        Calculate the total importance of scheduled services.
+
+        Args:
+            bool_scheduled: Boolean list indicating which services are scheduled.
+
+        Returns:
+            Total importance value (float).
+        """
+        scheduled = {}
+        for service, scheduled_flag in zip(self.revenue.keys(), bool_scheduled):
+            ru = self.revenue[service]["ru"]
+            scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
+
+        return scheduled
+
+
     def jains_fairness_index(
             self, bool_scheduled: List[bool], capacities: Mapping[Any, float]
     ) -> Tuple[float, Mapping[Any, float]]:
@@ -459,10 +477,7 @@ class MPTT:
               - The Jain's fairness index (float).
               - A mapping of resource-to-capacity ratios.
         """
-        scheduled = {}
-        for service, scheduled_flag in zip(self.revenue.keys(), bool_scheduled):
-            ru = self.revenue[service]["ru"]
-            scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
+        scheduled = self.sum_importance(bool_scheduled)
 
         if not scheduled:
             raise ValueError("Scheduled resources list cannot be empty.")
@@ -497,11 +512,7 @@ class MPTT:
               - Un mapeo de ratios (recurso asignado / capacidad) para cada RU.
         """
         # Construir el diccionario de recursos asignados (scheduled) por RU.
-        scheduled = {}
-        for service, scheduled_flag in zip(self.revenue.keys(), bool_scheduled):
-            ru = self.revenue[service]["ru"]
-            # Se suma la "importancia" si el servicio está programado.
-            scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
+        scheduled = self.sum_importance(bool_scheduled)
 
         print("Scheduled: ", scheduled)
         # Multiplicar cada recurso programado por el factor correspondiente de services_by_ru.
@@ -554,11 +565,7 @@ class MPTT:
               - La medida de equidad (float) en el rango [0, 1], donde 1 indica equidad perfecta.
               - Un mapeo de ratios (recurso asignado / capacidad) para cada RU.
         """
-        # Construir el diccionario de recursos asignados (scheduled) por RU.
-        scheduled = {}
-        for service, scheduled_flag in zip(self.revenue.keys(), bool_scheduled):
-            ru = self.revenue[service]["ru"]
-            scheduled[ru] = scheduled.get(ru, 0) + (self.revenue[service]["importance"] if scheduled_flag else 0)
+        scheduled = self.sum_importance(bool_scheduled)
 
         for ru in scheduled:
             scheduled[ru] *= self.services_by_ru[ru]
