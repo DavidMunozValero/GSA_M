@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 from copy import deepcopy
 from functools import cache
-from math import e, cos, pi
+from math import e, exp, cos, log, pi
 from pathlib import Path
 from typing import Any, List, Mapping, Tuple, Union
 
@@ -54,7 +54,7 @@ class MPTT:
         self.fair_index = fair_index
 
         if self.fair_index == "Jain":
-            self.fairness_index = self.jains_fairness_index
+            self.fairness_index = self.jain_fairness_index
         elif self.fair_index == "Gini":
             self.fairness_index = self.gini_fairness_index
         elif self.fair_index == "Atkinson":
@@ -461,8 +461,7 @@ class MPTT:
 
         return scheduled
 
-
-    def jains_fairness_index(
+    def jain_fairness_index(
             self, bool_scheduled: List[bool], capacities: Mapping[Any, float]
     ) -> Tuple[float, Mapping[Any, float]]:
         """
@@ -496,47 +495,46 @@ class MPTT:
         return fairness, scheduled
 
     def gini_fairness_index(
-            self, bool_scheduled: List[bool], capacities: Mapping[Any, float]
+            self,
+            bool_scheduled: List[bool],
+            capacities: Mapping[Any, float]
     ) -> Tuple[float, Mapping[Any, float]]:
         """
-        Calcula una medida de equidad basada en el coeficiente de Gini aplicado
-        a los ratios entre el recurso asignado y la capacidad (cuota) de cada RU.
+        Calculate a fairness measure based on the Gini coefficient applied to the scheduled resources.
 
         Args:
-            bool_scheduled: Lista de booleanos que indica qué servicios están programados.
-            capacities: Mapeo con la capacidad (o cuota) de cada RU.
+            bool_scheduled: List of booleans indicating which services are scheduled.
+            capacities: Mapping of capacity values for each RU.
 
         Returns:
-            Una tupla que contiene:
-              - La medida de equidad (float) en el rango [0, 1], donde 1 indica equidad perfecta.
-              - Un mapeo de ratios (recurso asignado / capacidad) para cada RU.
+            A tuple containing:
+              - The Gini fairness measure (float) in the range [0, 1], where 1 indicates perfect equity.
+              - A mapping of ratios (assigned resource / capacity) for each RU.
         """
-        # Construir el diccionario de recursos asignados (scheduled) por RU.
+        # Build the dictionary of scheduled resources by RU.
         scheduled = self.sum_importance(bool_scheduled)
 
-        print("Scheduled: ", scheduled)
-        # Multiplicar cada recurso programado por el factor correspondiente de services_by_ru.
+        # Multiply each scheduled resource by the corresponding services_by_ru factor.
         for ru in scheduled:
             scheduled[ru] *= self.services_by_ru[ru]
 
         if not scheduled:
-            raise ValueError("La lista de recursos programados no puede estar vacía.")
+            raise ValueError("List of scheduled resources cannot be empty.")
         if len(scheduled) != len(capacities):
-            raise ValueError("Los RUs de recursos asignados y capacidades deben coincidir en cantidad.")
+            raise ValueError("The scheduled resources and capacities RUs must match in quantity.")
 
-        # Calcular los ratios: recurso asignado / capacidad
+        # Calculated ratios: assigned resource / capacity
         ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
-        print("Ratios: ", ratios)
 
-        # Convertir los valores de ratios a una lista para calcular el Gini.
+        # Convert the ratio values to a list to calculate the Gini coefficient.
         values = list(ratios.values())
         n = len(values)
         total = sum(values)
         if total == 0:
-            # Si la suma es 0, se puede interpretar como igualdad (ningún RU recibe recurso)
+            # If the sum is 0, it can be interpreted as equality (no RU receives resource).
             return 1.0, ratios
 
-        # Calcular el coeficiente de Gini usando la fórmula basada en el ordenamiento:
+        # Calculate the Gini coefficient using the formula based on sorting:
         #   G = (2 * sum_{i=1}^n (i * x_i_sorted)) / (n * sum(x)) - (n + 1) / n
         sorted_values = sorted(values)
         cumulative = 0
@@ -544,26 +542,28 @@ class MPTT:
             cumulative += i * value
         gini = (2 * cumulative) / (n * total) - (n + 1) / n
 
-        # Convertir el coeficiente de desigualdad en una medida de equidad.
+        # Convert the inequality coefficient to a fairness measure.
         fairness = 1 - gini
         return fairness, ratios
 
     def atkinson_fairness_index(
-            self, bool_scheduled: List[bool], capacities: Mapping[Any, float], epsilon: float = 0.5
+            self,
+            bool_scheduled: List[bool],
+            capacities: Mapping[Any, float],
+            epsilon: float = 0.5
     ) -> Tuple[float, Mapping[Any, float]]:
         """
-        Calcula una medida de equidad basada en el índice de Atkinson aplicado
-        a los ratios entre el recurso asignado y la capacidad (cuota) de cada RU.
+        Calculate a fairness measure based on the Atkinson index applied to the scheduled resources.
 
         Args:
-            bool_scheduled: Lista de booleanos que indica qué servicios están programados.
-            capacities: Mapeo con la capacidad (o cuota) de cada RU.
-            epsilon: Parámetro de aversión a la desigualdad (usualmente en (0,1]). Por defecto 0.5.
+            bool_scheduled: List of booleans indicating which services are scheduled.
+            capacities: Mapping of capacity values for each RU.
+            epsilon: Atkinson index parameter (default: 0.5).
 
         Returns:
-            Una tupla que contiene:
-              - La medida de equidad (float) en el rango [0, 1], donde 1 indica equidad perfecta.
-              - Un mapeo de ratios (recurso asignado / capacidad) para cada RU.
+            A tuple containing:
+              - The Atkinson fairness measure (float) in the range [0, 1], where 1 indicates perfect equity.
+              - A mapping of ratios (assigned resource / capacity) for each RU.
         """
         scheduled = self.sum_importance(bool_scheduled)
 
@@ -571,38 +571,36 @@ class MPTT:
             scheduled[ru] *= self.services_by_ru[ru]
 
         if not scheduled:
-            raise ValueError("La lista de recursos programados no puede estar vacía.")
+            raise ValueError("List of scheduled resources cannot be empty.")
         if len(scheduled) != len(capacities):
-            raise ValueError("Los RUs de recursos asignados y capacidades deben coincidir en cantidad.")
+            raise ValueError("The scheduled resources and capacities RUs must match in quantity.")
 
-        # Calcular los ratios: recurso asignado / capacidad
+        # Calculated ratios: assigned resource / capacity
         ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
 
         values = list(ratios.values())
         n = len(values)
         if n == 0:
-            raise ValueError("No se han calculado ratios para el índice de Atkinson.")
+            raise ValueError("No ratios have been calculated for the Atkinson index.")
         mean = sum(values) / n
         if mean == 0:
-            # Si la media es 0, se puede interpretar como igualdad (ningún RU recibe recurso)
+            # if the mean is 0, it can be interpreted as equality (no RU receives resource)
             return 1.0, ratios
 
-        import math
-
-        # Calcular el índice de Atkinson
+        # Calculate the Atkinson index based on the given epsilon.
         if epsilon == 1:
-            # Versión logarítmica; se asume que todos los valores son positivos.
+            # Logarithmic version; it is assumed that all values are positive.
             try:
-                geo_mean = math.exp(sum(math.log(x) for x in values) / n)
+                geo_mean = exp(sum(log(x) for x in values) / n)
             except ValueError:
-                raise ValueError("Todos los valores de ratio deben ser positivos para epsilon = 1 en Atkinson.")
+                raise ValueError("All values of ratio must be positive for epsilon = 1 in Atkinson.")
             atkinson_index = 1 - geo_mean / mean
         else:
             sum_power = sum(x ** (1 - epsilon) for x in values)
             term = (sum_power / n) ** (1 / (1 - epsilon))
             atkinson_index = 1 - term / mean
 
-        # Convertir el índice de desigualdad de Atkinson en una medida de equidad.
+        # Convert the Atkinson index to a fairness measure.
         fairness = 1 - atkinson_index
         return fairness, ratios
 
