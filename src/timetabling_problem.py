@@ -191,7 +191,6 @@ class MPTT:
     def objective_function(
             self,
             solution: List[float],
-            alpha: float = 0.6
     ) -> float:
         """
         Compute the fitness (objective value) for the provided solution.
@@ -199,7 +198,6 @@ class MPTT:
 
         Args:
             solution: List of departure times.
-            alpha: Weight for the fairness index (default: 0.6).
 
         Returns:
             Fitness value (float).
@@ -214,7 +212,7 @@ class MPTT:
             fairness = 1.0
 
         revenue = self.get_revenue(Solution(real=solution, discrete=schedule))
-        return alpha * revenue - (1 - alpha) * (fairness * revenue)
+        return revenue * fairness
 
     def get_revenue(self, solution: Solution) -> float:
         """
@@ -469,7 +467,10 @@ class MPTT:
         return scheduled
 
     def jain_fairness_index(
-            self, bool_scheduled: List[bool], capacities: Mapping[Any, float]
+            self,
+            bool_scheduled: List[bool],
+            capacities: Mapping[Any, float],
+            alpha: float = 10.0
     ) -> Tuple[float, Mapping[Any, float]]:
         """
         Calculate the weighted Jain's fairness index based on the scheduled resources and capacities.
@@ -477,6 +478,7 @@ class MPTT:
         Args:
             bool_scheduled: Boolean list indicating which services are scheduled.
             capacities: Mapping of capacity values for each RU.
+            alpha: Weighting factor for the fairness index (default: 10.0).
 
         Returns:
             A tuple containing:
@@ -491,8 +493,7 @@ class MPTT:
             raise ValueError("Resources and capacities must have the same length.")
 
         ratios = scheduled
-        # alpha = 10  # Aumentar la sensibilidad
-        # ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
+        ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
         n = len(ratios)
         sum_ratios = sum(ratios.values())
         sum_squares = sum(x ** 2 for x in ratios.values())
@@ -504,7 +505,8 @@ class MPTT:
     def gini_fairness_index(
             self,
             bool_scheduled: List[bool],
-            capacities: Mapping[Any, float]
+            capacities: Mapping[Any, float],
+            alpha: float = 10.0
     ) -> Tuple[float, Mapping[Any, float]]:
         """
         Calculate a fairness measure based on the Gini coefficient applied to the scheduled resources.
@@ -512,6 +514,7 @@ class MPTT:
         Args:
             bool_scheduled: List of booleans indicating which services are scheduled.
             capacities: Mapping of capacity values for each RU.
+            alpha: Gini index parameter (default: 10.0).
 
         Returns:
             A tuple containing:
@@ -533,8 +536,7 @@ class MPTT:
         # Calculated ratios: assigned resource / capacity
         ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
 
-        # alpha = 10  # Aumentar la sensibilidad
-        # ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
+        ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
 
         # Convert the ratio values to a list to calculate the Gini coefficient.
         values = list(ratios.values())
@@ -560,6 +562,7 @@ class MPTT:
             self,
             bool_scheduled: List[bool],
             capacities: Mapping[Any, float],
+            alpha: float = 10.0,
             epsilon: float = 0.5
     ) -> Tuple[float, Mapping[Any, float]]:
         """
@@ -568,6 +571,7 @@ class MPTT:
         Args:
             bool_scheduled: List of booleans indicating which services are scheduled.
             capacities: Mapping of capacity values for each RU.
+            alpha: Weighting factor for the Atkinson index (default: 10.0).
             epsilon: Atkinson index parameter (default: 0.5).
 
         Returns:
@@ -588,8 +592,7 @@ class MPTT:
         # Calculated ratios: assigned resource / capacity
         ratios = {ru: scheduled[ru] / capacities[ru] for ru in capacities}
 
-        # alpha = 10  # Aumentar la sensibilidad
-        # ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
+        ratios = {ru: (ratio ** alpha) for ru, ratio in ratios.items()}
 
         values = list(ratios.values())
         n = len(values)
