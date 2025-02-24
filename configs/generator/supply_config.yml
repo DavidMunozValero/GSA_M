@@ -155,6 +155,20 @@ rollingStock:
     quantity: 350
   - hard_type: 2
     quantity: 50
+- id: '51'
+  name: 'RU5 RS1'
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '52'
+  name: 'RU5 RS2'
+  seats:
+  - hard_type: 1
+    quantity: 350
+  - hard_type: 2
+    quantity: 50
 trainServiceProvider:
 - id: '1'
   name: 'RU1'
@@ -177,6 +191,11 @@ trainServiceProvider:
   rolling_stock:
   - '31'
   - '32'
+- id: '5'
+  name: 'RU5'
+  rolling_stock:
+  - '51'
+  - '52'
 line:
 - id: '1'
   name: 'ZAR - LLE - TAR - BAR'

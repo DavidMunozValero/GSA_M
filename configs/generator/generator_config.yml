@@ -52,6 +52,7 @@ tsps:
     '2': 0.25
     '3': 0.3
     '4': 0.2
+    '5': 0.2
 
 # Prices config
 prices:
@@ -63,6 +64,7 @@ prices:
       '2': 1.1  # Renfe AVLO
       '3': 1  # Iryo
       '4': 0.5  # Ouigo
+      '5': 0.5
   seat_type_factor:  # Defines how the seat type affects the price (multiplies each price by the factor)
       '1': 1  # Tourist Class
       '2': 1.2 # Tourist Plus Class
@@ -71,5 +73,5 @@ prices:
 # Service config
 services:
   dates: # Set range for random dates
-    min: 2024-06-25
-    max: 2024-06-26
+    min: 2025-06-25
+    max: 2025-06-26

@@ -31,6 +31,7 @@ class MPTT:
             safe_headway: int = 10,
             max_stop_time: int = 10,
             fair_index: Union[None, str] = None,
+            alpha: float = 1.0,
     ) -> None:
         """
         Initialize the MPTT instance.
@@ -42,6 +43,7 @@ class MPTT:
             safe_headway: The minimum safe headway time between trains.
             max_stop_time: Maximum allowed stop time.
             fair_index: The fairness index to use for equity considerations.
+            alpha: Alpha parameter.
         """
         self.requested_schedule = requested_schedule
         self.line_stations = get_stations_positions(line)
@@ -52,6 +54,7 @@ class MPTT:
         self.im_mod_margin = 60
         self.max_stop_time = max_stop_time
         self.fair_index = fair_index
+        self.alpha = alpha
 
         if self.fair_index == "Jain":
             self.fairness_index = self.jain_fairness_index
@@ -206,7 +209,7 @@ class MPTT:
         self.update_schedule(solution_arr)
         if self.fairness_index:
             schedule = self.get_heuristic_schedule_new()
-            fairness, _ = self.fairness_index(schedule, self.capacities)
+            fairness, _ = self.fairness_index(schedule, self.capacities, alpha=self.alpha)
         else:
             schedule = self.get_heuristic_schedule_old()
             fairness = 1.0
@@ -294,7 +297,7 @@ class MPTT:
         master_conflicts = {sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]]}
 
         while master_conflicts:
-            fair_index, ratios = self.fairness_index(default_planner, self.capacities)
+            fair_index, ratios = self.fairness_index(default_planner, self.capacities, alpha=self.alpha)
             # Find, among pending services, those belonging to the RU with the worst ratio.
             conflicts = set()
             for ru in sorted(ratios, key=ratios.get):
@@ -354,7 +357,7 @@ class MPTT:
             Fairness index after scheduling the service.
         """
         scheduled[list(self.updated_schedule.keys()).index(service)] = True
-        fair_index, _ = self.fairness_index(scheduled, self.capacities)
+        fair_index, _ = self.fairness_index(scheduled, self.capacities, alpha=self.alpha)
         return fair_index
 
     def get_operational_times(self) -> Mapping[str, List[float]]:
@@ -470,7 +473,7 @@ class MPTT:
             self,
             bool_scheduled: List[bool],
             capacities: Mapping[Any, float],
-            alpha: float = 10.0
+            alpha: float
     ) -> Tuple[float, Mapping[Any, float]]:
         """
         Calculate the weighted Jain's fairness index based on the scheduled resources and capacities.
@@ -506,7 +509,7 @@ class MPTT:
             self,
             bool_scheduled: List[bool],
             capacities: Mapping[Any, float],
-            alpha: float = 10.0
+            alpha: float
     ) -> Tuple[float, Mapping[Any, float]]:
         """
         Calculate a fairness measure based on the Gini coefficient applied to the scheduled resources.
@@ -562,7 +565,7 @@ class MPTT:
             self,
             bool_scheduled: List[bool],
             capacities: Mapping[Any, float],
-            alpha: float = 10.0,
+            alpha: float,
             epsilon: float = 0.5
     ) -> Tuple[float, Mapping[Any, float]]:
         """
