@@ -566,7 +566,7 @@ class MPTT:
             bool_scheduled: List[bool],
             capacities: Mapping[Any, float],
             alpha: float,
-            epsilon: float = 0.5
+            epsilon: float = 2
     ) -> Tuple[float, Mapping[Any, float]]:
         """
         Calculate a fairness measure based on the Atkinson index applied to the scheduled resources.
@@ -615,7 +615,8 @@ class MPTT:
                 raise ValueError("All values of ratio must be positive for epsilon = 1 in Atkinson.")
             atkinson_index = 1 - geo_mean / mean
         else:
-            sum_power = sum(x ** (1 - epsilon) for x in values)
+            adjusted_values = [x if x > 0 else 1e-10 for x in values]
+            sum_power = sum(x ** (1 - epsilon) for x in adjusted_values)
             term = (sum_power / n) ** (1 / (1 - epsilon))
             atkinson_index = 1 - term / mean
 
