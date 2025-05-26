@@ -29,6 +29,7 @@ class MPTT:
             revenue_behavior: Mapping[str, Mapping[str, float]],
             line: Mapping[str, Tuple[float, float]],
             safe_headway: int = 10,
+            im_mod_margin: int = 60,
             max_stop_time: int = 10,
             fair_index: Union[None, str] = None,
             alpha: float = 1.0,
@@ -51,7 +52,7 @@ class MPTT:
         self.line = line
 
         self.safe_headway = safe_headway
-        self.im_mod_margin = 60
+        self.im_mod_margin = im_mod_margin
         self.max_stop_time = max_stop_time
         self.fair_index = fair_index
         self.alpha = alpha
