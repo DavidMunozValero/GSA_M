@@ -107,7 +107,7 @@ class MPTT:
         Returns:
             A list of updated Service objects.
         """
-        self.update_schedule(solution)
+        self.update_schedule(solution.real)
         services = []
         supply = Supply.from_yaml(path=path)
         scheduled_services = solution.discrete
@@ -130,21 +130,31 @@ class MPTT:
             }
             updated_line_id = str(hash(str(list(relative_timetable.values()))))
             updated_line = Line(updated_line_id, service.line.name, service.line.corridor, relative_timetable)
-            date = service.date
             start_time = datetime.timedelta(minutes=float(departure_time))
             time_slot_id = f"{start_time.seconds}"
             updated_time_slot = TimeSlot(time_slot_id, start_time, start_time + datetime.timedelta(minutes=10))
-            updated_service = build_service(
+            updated_service = Service(
                 id_=service.id,
-                date=date,
+                date=service.date,
                 line=updated_line,
-                time_slot=updated_time_slot,
                 tsp=service.tsp,
-                rs=service.rolling_stock,
-                prices=service.prices,
-                build_service_id=False,
+                time_slot=updated_time_slot,
+                rolling_stock=service.rolling_stock,
+                prices=service.prices
             )
             services.append(updated_service)
+
+        # Get set of used rolling stocks
+        used_rolling_stocks = {service.rolling_stock for service in services}
+        tsp_rolling_stocks = {}
+        for rs in used_rolling_stocks:
+            if rs.id not in tsp_rolling_stocks:
+                tsp_rolling_stocks[rs.id] = [rs]
+            else:
+                tsp_rolling_stocks[rs.id].append(rs)
+
+        for i in range(len(services)):
+            services[i].tsp.rolling_stock = tsp_rolling_stocks[services[i].rolling_stock.id]
         return services
 
     def update_schedule(self, solution: np.array) -> None:
