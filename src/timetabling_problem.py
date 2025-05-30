@@ -130,7 +130,7 @@ class MPTT:
             }
             updated_line_id = str(hash(str(list(relative_timetable.values()))))
             updated_line = Line(updated_line_id, service.line.name, service.line.corridor, relative_timetable)
-            start_time = datetime.timedelta(minutes=float(departure_time))
+            start_time = datetime.timedelta(minutes=round(departure_time))
             time_slot_id = f"{start_time.seconds}"
             updated_time_slot = TimeSlot(time_slot_id, start_time, start_time + datetime.timedelta(minutes=10))
             updated_service = Service(
