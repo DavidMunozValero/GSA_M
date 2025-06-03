@@ -1,0 +1,1770 @@
+stations:
+- id: Madrid
+  name: Madrid-Puerta de Atocha
+  city: Madrid
+  short_name: MAD
+  coordinates:
+    latitude: 40.406442
+    longitude: -3.690886
+- id: Guadalajara
+  name: Guadalajara
+  city: Guadalajara
+  short_name: GUA
+  coordinates:
+    latitude: 40.6441032
+    longitude: -3.1822298
+- id: Calatayud
+  name: Calatayud
+  city: Calatayud
+  short_name: CAL
+  coordinates:
+    latitude: 41.346692
+    longitude: -1.63868
+- id: Zaragoza
+  name: Zaragoza-Delicias
+  city: Zaragoza
+  short_name: ZAR
+  coordinates:
+    latitude: 41.658649
+    longitude: -0.911615
+- id: Lleida
+  name: Lleida
+  city: Lleida
+  short_name: LLE
+  coordinates:
+    latitude: 41.620696
+    longitude: 0.632669
+- id: Tarragona
+  name: Tarragona
+  city: Tarragona
+  short_name: TAR
+  coordinates:
+    latitude: 41.111624
+    longitude: 1.253214
+- id: Barcelona
+  name: Barcelona-Sants
+  city: Barcelona
+  short_name: BAR
+  coordinates:
+    latitude: 41.37922
+    longitude: 2.140624
+- id: Girona
+  name: Girona
+  city: Girona
+  short_name: GIR
+  coordinates:
+    latitude: 41.979303
+    longitude: 2.817006
+- id: Figueres
+  name: Figueres Vilafant
+  city: Figueres
+  short_name: FIG
+  coordinates:
+    latitude: 42.264771
+    longitude: 2.943547
+timeSlot:
+- id: '63600'
+  start: '17:40:00'
+  end: '17:50:00'
+- id: '52320'
+  start: '14:32:00'
+  end: '14:42:00'
+- id: '54240'
+  start: '15:04:00'
+  end: '15:14:00'
+- id: '49620'
+  start: '13:47:00'
+  end: '13:57:00'
+- id: '81240'
+  start: '22:34:00'
+  end: '22:44:00'
+- id: '43740'
+  start: '12:09:00'
+  end: '12:19:00'
+- id: '7800'
+  start: '2:10:00'
+  end: '2:20:00'
+- id: '28920'
+  start: '8:02:00'
+  end: '8:12:00'
+- id: '31860'
+  start: '8:51:00'
+  end: '9:01:00'
+- id: '55440'
+  start: '15:24:00'
+  end: '15:34:00'
+- id: '44880'
+  start: '12:28:00'
+  end: '12:38:00'
+- id: '11100'
+  start: '3:05:00'
+  end: '3:15:00'
+- id: '23880'
+  start: '6:38:00'
+  end: '6:48:00'
+- id: '56340'
+  start: '15:39:00'
+  end: '15:49:00'
+- id: '69660'
+  start: '19:21:00'
+  end: '19:31:00'
+- id: '24720'
+  start: '6:52:00'
+  end: '7:02:00'
+- id: '16380'
+  start: '4:33:00'
+  end: '4:43:00'
+- id: '31620'
+  start: '8:47:00'
+  end: '8:57:00'
+- id: '64740'
+  start: '17:59:00'
+  end: '18:09:00'
+- id: '71340'
+  start: '19:49:00'
+  end: '19:59:00'
+- id: '33480'
+  start: '9:18:00'
+  end: '9:28:00'
+- id: '74460'
+  start: '20:41:00'
+  end: '20:51:00'
+- id: '27660'
+  start: '7:41:00'
+  end: '7:51:00'
+- id: '76980'
+  start: '21:23:00'
+  end: '21:33:00'
+- id: '53820'
+  start: '14:57:00'
+  end: '15:07:00'
+corridor:
+- id: '1'
+  name: Corredor Noreste
+  stations:
+  - org: Madrid
+    des:
+    - org: Guadalajara
+      des:
+      - org: Calatayud
+        des:
+        - org: Zaragoza
+          des:
+          - org: Lleida
+            des:
+            - org: Tarragona
+              des:
+              - org: Barcelona
+                des:
+                - org: Girona
+                  des:
+                  - org: Figueres
+                    des: []
+line:
+- id: Line_0
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 47.0
+    departure_time: 49.0
+  - station: Tarragona
+    arrival_time: 78.0
+    departure_time: 80.0
+  - station: Barcelona
+    arrival_time: 119.0
+    departure_time: 119.0
+- id: Line_1
+  name: MAD - ZAR - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Zaragoza
+    arrival_time: 97.0
+    departure_time: 98.0
+  - station: Tarragona
+    arrival_time: 170.0
+    departure_time: 172.0
+  - station: Barcelona
+    arrival_time: 222.0
+    departure_time: 222.0
+- id: Line_2
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 162.0
+    departure_time: 162.0
+- id: Line_3
+  name: MAD - ZAR - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Zaragoza
+    arrival_time: 84.0
+    departure_time: 85.0
+  - station: Barcelona
+    arrival_time: 185.0
+    departure_time: 185.0
+- id: Line_4
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 168.0
+    departure_time: 168.0
+- id: Line_5
+  name: LLE - BAR
+  corridor: '1'
+  stops:
+  - station: Lleida
+    arrival_time: 0.0
+    departure_time: 2.0
+  - station: Barcelona
+    arrival_time: 73.0
+    departure_time: 73.0
+- id: Line_6
+  name: MAD - ZAR - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Zaragoza
+    arrival_time: 79.0
+    departure_time: 80.0
+  - station: Tarragona
+    arrival_time: 139.0
+    departure_time: 141.0
+  - station: Barcelona
+    arrival_time: 181.0
+    departure_time: 181.0
+- id: Line_7
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 180.0
+    departure_time: 180.0
+- id: Line_8
+  name: MAD - ZAR - LLE - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Zaragoza
+    arrival_time: 98.0
+    departure_time: 99.0
+  - station: Lleida
+    arrival_time: 158.0
+    departure_time: 161.0
+  - station: Barcelona
+    arrival_time: 250.0
+    departure_time: 250.0
+- id: Line_9
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 196.0
+    departure_time: 196.0
+- id: Line_10
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 175.0
+    departure_time: 175.0
+- id: Line_11
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 166.0
+    departure_time: 166.0
+- id: Line_12
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 62.0
+    departure_time: 65.0
+  - station: Tarragona
+    arrival_time: 105.0
+    departure_time: 108.0
+  - station: Barcelona
+    arrival_time: 159.0
+    departure_time: 159.0
+- id: Line_13
+  name: MAD - GUA - ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Guadalajara
+    arrival_time: 28.0
+    departure_time: 29.0
+  - station: Zaragoza
+    arrival_time: 98.0
+    departure_time: 99.0
+  - station: Lleida
+    arrival_time: 153.0
+    departure_time: 155.0
+  - station: Tarragona
+    arrival_time: 191.0
+    departure_time: 193.0
+  - station: Barcelona
+    arrival_time: 239.0
+    departure_time: 239.0
+- id: Line_14
+  name: MAD - GUA - ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Guadalajara
+    arrival_time: 26.0
+    departure_time: 27.0
+  - station: Zaragoza
+    arrival_time: 91.0
+    departure_time: 92.0
+  - station: Lleida
+    arrival_time: 142.0
+    departure_time: 144.0
+  - station: Tarragona
+    arrival_time: 177.0
+    departure_time: 179.0
+  - station: Barcelona
+    arrival_time: 222.0
+    departure_time: 222.0
+- id: Line_15
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 52.0
+    departure_time: 54.0
+  - station: Tarragona
+    arrival_time: 87.0
+    departure_time: 89.0
+  - station: Barcelona
+    arrival_time: 132.0
+    departure_time: 132.0
+- id: Line_16
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 56.0
+    departure_time: 58.0
+  - station: Tarragona
+    arrival_time: 94.0
+    departure_time: 96.0
+  - station: Barcelona
+    arrival_time: 142.0
+    departure_time: 142.0
+- id: Line_17
+  name: LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Lleida
+    arrival_time: 0.0
+    departure_time: 2.0
+  - station: Tarragona
+    arrival_time: 40.0
+    departure_time: 43.0
+  - station: Barcelona
+    arrival_time: 93.0
+    departure_time: 93.0
+- id: Line_18
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 201.0
+    departure_time: 201.0
+- id: Line_19
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 57.0
+    departure_time: 60.0
+  - station: Tarragona
+    arrival_time: 96.0
+    departure_time: 99.0
+  - station: Barcelona
+    arrival_time: 146.0
+    departure_time: 146.0
+- id: Line_20
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 53.0
+    departure_time: 55.0
+  - station: Tarragona
+    arrival_time: 89.0
+    departure_time: 91.0
+  - station: Barcelona
+    arrival_time: 135.0
+    departure_time: 135.0
+- id: Line_21
+  name: MAD - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Barcelona
+    arrival_time: 199.0
+    departure_time: 199.0
+- id: Line_22
+  name: ZAR - LLE - TAR - BAR
+  corridor: '1'
+  stops:
+  - station: Zaragoza
+    arrival_time: 0.0
+    departure_time: 1.0
+  - station: Lleida
+    arrival_time: 62.0
+    departure_time: 64.0
+  - station: Tarragona
+    arrival_time: 104.0
+    departure_time: 106.0
+  - station: Barcelona
+    arrival_time: 159.0
+    departure_time: 159.0
+- id: Line_23
+  name: LLE - BAR
+  corridor: '1'
+  stops:
+  - station: Lleida
+    arrival_time: 0.0
+    departure_time: 2.0
+  - station: Barcelona
+    arrival_time: 94.0
+    departure_time: 94.0
+- id: Line_24
+  name: MAD - ZAR - LLE - BAR
+  corridor: '1'
+  stops:
+  - station: Madrid
+    arrival_time: 0.0
+    departure_time: 0.0
+  - station: Zaragoza
+    arrival_time: 99.0
+    departure_time: 100.0
+  - station: Lleida
+    arrival_time: 159.0
+    departure_time: 162.0
+  - station: Barcelona
+    arrival_time: 253.0
+    departure_time: 253.0
+seat:
+- id: '1'
+  name: Turista
+  hard_type: 1
+  soft_type: 1
+- id: '2'
+  name: TuristaPlus
+  hard_type: 1
+  soft_type: 2
+- id: '3'
+  name: Premium
+  hard_type: 2
+  soft_type: 3
+rollingStock:
+- id: '21'
+  name: RU2 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+- id: '41'
+  name: RU3 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '11'
+  name: RU1 RS1
+  seats:
+  - hard_type: 1
+    quantity: 200
+  - hard_type: 2
+    quantity: 50
+- id: '32'
+  name: RU2 RS2
+  seats:
+  - hard_type: 2
+    quantity: 450
+- id: '31'
+  name: RU2 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '42'
+  name: RU3 RS2
+  seats:
+  - hard_type: 1
+    quantity: 350
+  - hard_type: 2
+    quantity: 50
+- id: '51'
+  name: RU5 RS1
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '13'
+  name: RU1 RS3
+  seats:
+  - hard_type: 1
+    quantity: 300
+  - hard_type: 2
+    quantity: 50
+- id: '22'
+  name: RU2 RS2
+  seats:
+  - hard_type: 1
+    quantity: 350
+- id: '12'
+  name: RU1 RS2
+  seats:
+  - hard_type: 1
+    quantity: 250
+  - hard_type: 2
+    quantity: 50
+- id: '52'
+  name: RU5 RS2
+  seats:
+  - hard_type: 1
+    quantity: 350
+  - hard_type: 2
+    quantity: 50
+trainServiceProvider:
+- id: '2'
+  name: RU2
+  rolling_stock:
+  - '21'
+  - '22'
+- id: '3'
+  name: RU3
+  rolling_stock:
+  - '41'
+  - '42'
+- id: '1'
+  name: RU1
+  rolling_stock:
+  - '11'
+  - '12'
+  - '13'
+- id: '4'
+  name: RU4
+  rolling_stock:
+  - '31'
+  - '32'
+- id: '5'
+  name: RU5
+  rolling_stock:
+  - '51'
+  - '52'
+service:
+- id: 0_2025-06-25-17.40
+  date: '2025-06-25'
+  line: Line_0
+  train_service_provider: '2'
+  time_slot: '63600'
+  rolling_stock: '21'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '18.06'
+    - seat: '2'
+      price: '21.67'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '21.48'
+    - seat: '2'
+      price: '25.78'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '25.08'
+    - seat: '2'
+      price: '30.1'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '15.22'
+    - seat: '2'
+      price: '18.26'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '18.06'
+    - seat: '2'
+      price: '21.68'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '15.4'
+    - seat: '2'
+      price: '18.48'
+  capacity_constraints: null
+- id: 1_2025-06-25-14.32
+  date: '2025-06-25'
+  line: Line_1
+  train_service_provider: '3'
+  time_slot: '52320'
+  rolling_stock: '41'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '23.58'
+    - seat: '2'
+      price: '28.29'
+    - seat: '3'
+      price: '37.72'
+  - origin: Madrid
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '31.18'
+    - seat: '2'
+      price: '37.42'
+    - seat: '3'
+      price: '49.89'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.09'
+    - seat: '2'
+      price: '42.11'
+    - seat: '3'
+      price: '56.15'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '19.53'
+    - seat: '2'
+      price: '23.43'
+    - seat: '3'
+      price: '31.25'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '22.8'
+    - seat: '2'
+      price: '27.36'
+    - seat: '3'
+      price: '36.48'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '14.0'
+    - seat: '2'
+      price: '16.8'
+    - seat: '3'
+      price: '22.39'
+  capacity_constraints: null
+- id: 2_2025-06-25-15.04
+  date: '2025-06-25'
+  line: Line_2
+  train_service_provider: '1'
+  time_slot: '54240'
+  rolling_stock: '11'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '52.64'
+    - seat: '2'
+      price: '63.17'
+    - seat: '3'
+      price: '84.22'
+  capacity_constraints: null
+- id: 3_2025-06-25-13.47
+  date: '2025-06-25'
+  line: Line_3
+  train_service_provider: '4'
+  time_slot: '49620'
+  rolling_stock: '32'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '3'
+      price: '18.86'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '3'
+      price: '28.07'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '3'
+      price: '18.24'
+  capacity_constraints: null
+- id: 4_2025-06-25-22.34
+  date: '2025-06-25'
+  line: Line_4
+  train_service_provider: '3'
+  time_slot: '81240'
+  rolling_stock: '41'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.09'
+    - seat: '2'
+      price: '42.11'
+    - seat: '3'
+      price: '56.15'
+  capacity_constraints: null
+- id: 5_2025-06-25-12.09
+  date: '2025-06-25'
+  line: Line_5
+  train_service_provider: '4'
+  time_slot: '43740'
+  rolling_stock: '31'
+  origin_destination_tuples:
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  capacity_constraints: null
+- id: 6_2025-06-25-2.10
+  date: '2025-06-25'
+  line: Line_6
+  train_service_provider: '3'
+  time_slot: '7800'
+  rolling_stock: '42'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '23.58'
+    - seat: '2'
+      price: '28.29'
+    - seat: '3'
+      price: '37.72'
+  - origin: Madrid
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '31.18'
+    - seat: '2'
+      price: '37.42'
+    - seat: '3'
+      price: '49.89'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.09'
+    - seat: '2'
+      price: '42.11'
+    - seat: '3'
+      price: '56.15'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '19.53'
+    - seat: '2'
+      price: '23.43'
+    - seat: '3'
+      price: '31.25'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '22.8'
+    - seat: '2'
+      price: '27.36'
+    - seat: '3'
+      price: '36.48'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '14.0'
+    - seat: '2'
+      price: '16.8'
+    - seat: '3'
+      price: '22.39'
+  capacity_constraints: null
+- id: 7_2025-06-25-8.02
+  date: '2025-06-25'
+  line: Line_7
+  train_service_provider: '3'
+  time_slot: '28920'
+  rolling_stock: '41'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.09'
+    - seat: '2'
+      price: '42.11'
+    - seat: '3'
+      price: '56.15'
+  capacity_constraints: null
+- id: 8_2025-06-25-8.51
+  date: '2025-06-25'
+  line: Line_8
+  train_service_provider: '5'
+  time_slot: '31860'
+  rolling_stock: '51'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '11.79'
+    - seat: '2'
+      price: '14.15'
+    - seat: '3'
+      price: '18.86'
+  - origin: Madrid
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '14.68'
+    - seat: '2'
+      price: '17.61'
+    - seat: '3'
+      price: '23.48'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '17.55'
+    - seat: '2'
+      price: '21.06'
+    - seat: '3'
+      price: '28.07'
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '11.4'
+    - seat: '2'
+      price: '13.68'
+    - seat: '3'
+      price: '18.24'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  capacity_constraints: null
+- id: 9_2025-06-25-15.24
+  date: '2025-06-25'
+  line: Line_9
+  train_service_provider: '2'
+  time_slot: '55440'
+  rolling_stock: '21'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '38.6'
+    - seat: '2'
+      price: '46.32'
+  capacity_constraints: null
+- id: 10_2025-06-25-12.28
+  date: '2025-06-25'
+  line: Line_10
+  train_service_provider: '3'
+  time_slot: '44880'
+  rolling_stock: '42'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.09'
+    - seat: '2'
+      price: '42.11'
+    - seat: '3'
+      price: '56.15'
+  capacity_constraints: null
+- id: 11_2025-06-25-3.05
+  date: '2025-06-25'
+  line: Line_11
+  train_service_provider: '1'
+  time_slot: '11100'
+  rolling_stock: '13'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '52.64'
+    - seat: '2'
+      price: '63.17'
+    - seat: '3'
+      price: '84.22'
+  capacity_constraints: null
+- id: 12_2025-06-25-6.38
+  date: '2025-06-25'
+  line: Line_12
+  train_service_provider: '4'
+  time_slot: '23880'
+  rolling_stock: '31'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '9.76'
+    - seat: '2'
+      price: '11.72'
+    - seat: '3'
+      price: '15.62'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '11.4'
+    - seat: '2'
+      price: '13.68'
+    - seat: '3'
+      price: '18.24'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '6.92'
+    - seat: '2'
+      price: '8.3'
+    - seat: '3'
+      price: '11.07'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '7.0'
+    - seat: '2'
+      price: '8.4'
+    - seat: '3'
+      price: '11.2'
+  capacity_constraints: null
+- id: 13_2025-06-25-15.39
+  date: '2025-06-25'
+  line: Line_13
+  train_service_provider: '1'
+  time_slot: '56340'
+  rolling_stock: '13'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Guadalajara
+    seats:
+    - seat: '1'
+      price: '18.78'
+    - seat: '2'
+      price: '22.54'
+    - seat: '3'
+      price: '30.06'
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '35.36'
+    - seat: '2'
+      price: '42.44'
+    - seat: '3'
+      price: '56.58'
+  - origin: Madrid
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '44.03'
+    - seat: '2'
+      price: '52.83'
+    - seat: '3'
+      price: '70.44'
+  - origin: Madrid
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '46.78'
+    - seat: '2'
+      price: '56.13'
+    - seat: '3'
+      price: '74.84'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '52.64'
+    - seat: '2'
+      price: '63.17'
+    - seat: '3'
+      price: '84.22'
+  - origin: Guadalajara
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '31.58'
+    - seat: '2'
+      price: '37.89'
+    - seat: '3'
+      price: '50.53'
+  - origin: Guadalajara
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '40.31'
+    - seat: '2'
+      price: '48.37'
+    - seat: '3'
+      price: '64.49'
+  - origin: Guadalajara
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '43.24'
+    - seat: '2'
+      price: '51.88'
+    - seat: '3'
+      price: '69.18'
+  - origin: Guadalajara
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '49.05'
+    - seat: '2'
+      price: '58.86'
+    - seat: '3'
+      price: '78.47'
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '29.29'
+    - seat: '2'
+      price: '35.15'
+    - seat: '3'
+      price: '46.87'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '34.2'
+    - seat: '2'
+      price: '41.04'
+    - seat: '3'
+      price: '54.72'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '20.75'
+    - seat: '2'
+      price: '24.9'
+    - seat: '3'
+      price: '33.21'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '21.0'
+    - seat: '2'
+      price: '25.19'
+    - seat: '3'
+      price: '33.59'
+  capacity_constraints: null
+- id: 14_2025-06-25-19.21
+  date: '2025-06-25'
+  line: Line_14
+  train_service_provider: '2'
+  time_slot: '69660'
+  rolling_stock: '22'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Guadalajara
+    seats:
+    - seat: '1'
+      price: '13.78'
+    - seat: '2'
+      price: '16.53'
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '25.93'
+    - seat: '2'
+      price: '31.12'
+  - origin: Madrid
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '32.29'
+    - seat: '2'
+      price: '38.74'
+  - origin: Madrid
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '34.3'
+    - seat: '2'
+      price: '41.16'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '38.6'
+    - seat: '2'
+      price: '46.32'
+  - origin: Guadalajara
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '23.16'
+    - seat: '2'
+      price: '27.79'
+  - origin: Guadalajara
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '29.56'
+    - seat: '2'
+      price: '35.47'
+  - origin: Guadalajara
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '31.71'
+    - seat: '2'
+      price: '38.05'
+  - origin: Guadalajara
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '35.97'
+    - seat: '2'
+      price: '43.16'
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '18.06'
+    - seat: '2'
+      price: '21.67'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '21.48'
+    - seat: '2'
+      price: '25.78'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '25.08'
+    - seat: '2'
+      price: '30.1'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '15.22'
+    - seat: '2'
+      price: '18.26'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '18.06'
+    - seat: '2'
+      price: '21.68'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '15.4'
+    - seat: '2'
+      price: '18.48'
+  capacity_constraints: null
+- id: 15_2025-06-25-6.52
+  date: '2025-06-25'
+  line: Line_15
+  train_service_provider: '1'
+  time_slot: '24720'
+  rolling_stock: '12'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '29.29'
+    - seat: '2'
+      price: '35.15'
+    - seat: '3'
+      price: '46.87'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '34.2'
+    - seat: '2'
+      price: '41.04'
+    - seat: '3'
+      price: '54.72'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '20.75'
+    - seat: '2'
+      price: '24.9'
+    - seat: '3'
+      price: '33.21'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '21.0'
+    - seat: '2'
+      price: '25.19'
+    - seat: '3'
+      price: '33.59'
+  capacity_constraints: null
+- id: 16_2025-06-25-4.33
+  date: '2025-06-25'
+  line: Line_16
+  train_service_provider: '5'
+  time_slot: '16380'
+  rolling_stock: '51'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '9.76'
+    - seat: '2'
+      price: '11.72'
+    - seat: '3'
+      price: '15.62'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '11.4'
+    - seat: '2'
+      price: '13.68'
+    - seat: '3'
+      price: '18.24'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '6.92'
+    - seat: '2'
+      price: '8.3'
+    - seat: '3'
+      price: '11.07'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '7.0'
+    - seat: '2'
+      price: '8.4'
+    - seat: '3'
+      price: '11.2'
+  capacity_constraints: null
+- id: 17_2025-06-25-8.47
+  date: '2025-06-25'
+  line: Line_17
+  train_service_provider: '3'
+  time_slot: '31620'
+  rolling_stock: '42'
+  origin_destination_tuples:
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '13.84'
+    - seat: '2'
+      price: '16.6'
+    - seat: '3'
+      price: '22.14'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '16.42'
+    - seat: '2'
+      price: '19.71'
+    - seat: '3'
+      price: '26.27'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '14.0'
+    - seat: '2'
+      price: '16.8'
+    - seat: '3'
+      price: '22.39'
+  capacity_constraints: null
+- id: 18_2025-06-25-17.59
+  date: '2025-06-25'
+  line: Line_18
+  train_service_provider: '5'
+  time_slot: '64740'
+  rolling_stock: '51'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '17.55'
+    - seat: '2'
+      price: '21.06'
+    - seat: '3'
+      price: '28.07'
+  capacity_constraints: null
+- id: 19_2025-06-25-19.49
+  date: '2025-06-25'
+  line: Line_19
+  train_service_provider: '4'
+  time_slot: '71340'
+  rolling_stock: '31'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '9.76'
+    - seat: '2'
+      price: '11.72'
+    - seat: '3'
+      price: '15.62'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '11.4'
+    - seat: '2'
+      price: '13.68'
+    - seat: '3'
+      price: '18.24'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '6.92'
+    - seat: '2'
+      price: '8.3'
+    - seat: '3'
+      price: '11.07'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '7.0'
+    - seat: '2'
+      price: '8.4'
+    - seat: '3'
+      price: '11.2'
+  capacity_constraints: null
+- id: 20_2025-06-25-9.18
+  date: '2025-06-25'
+  line: Line_20
+  train_service_provider: '1'
+  time_slot: '33480'
+  rolling_stock: '11'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '29.29'
+    - seat: '2'
+      price: '35.15'
+    - seat: '3'
+      price: '46.87'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '34.2'
+    - seat: '2'
+      price: '41.04'
+    - seat: '3'
+      price: '54.72'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '20.75'
+    - seat: '2'
+      price: '24.9'
+    - seat: '3'
+      price: '33.21'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '24.63'
+    - seat: '2'
+      price: '29.56'
+    - seat: '3'
+      price: '39.41'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '21.0'
+    - seat: '2'
+      price: '25.19'
+    - seat: '3'
+      price: '33.59'
+  capacity_constraints: null
+- id: 21_2025-06-25-20.41
+  date: '2025-06-25'
+  line: Line_21
+  train_service_provider: '5'
+  time_slot: '74460'
+  rolling_stock: '51'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '17.55'
+    - seat: '2'
+      price: '21.06'
+    - seat: '3'
+      price: '28.07'
+  capacity_constraints: null
+- id: 22_2025-06-25-7.41
+  date: '2025-06-25'
+  line: Line_22
+  train_service_provider: '3'
+  time_slot: '27660'
+  rolling_stock: '42'
+  origin_destination_tuples:
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '16.42'
+    - seat: '2'
+      price: '19.7'
+    - seat: '3'
+      price: '26.27'
+  - origin: Zaragoza
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '19.53'
+    - seat: '2'
+      price: '23.43'
+    - seat: '3'
+      price: '31.25'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '22.8'
+    - seat: '2'
+      price: '27.36'
+    - seat: '3'
+      price: '36.48'
+  - origin: Lleida
+    destination: Tarragona
+    seats:
+    - seat: '1'
+      price: '13.84'
+    - seat: '2'
+      price: '16.6'
+    - seat: '3'
+      price: '22.14'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '16.42'
+    - seat: '2'
+      price: '19.71'
+    - seat: '3'
+      price: '26.27'
+  - origin: Tarragona
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '14.0'
+    - seat: '2'
+      price: '16.8'
+    - seat: '3'
+      price: '22.39'
+  capacity_constraints: null
+- id: 23_2025-06-25-21.23
+  date: '2025-06-25'
+  line: Line_23
+  train_service_provider: '4'
+  time_slot: '76980'
+  rolling_stock: '32'
+  origin_destination_tuples:
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '3'
+      price: '13.14'
+  capacity_constraints: null
+- id: 24_2025-06-25-14.57
+  date: '2025-06-25'
+  line: Line_24
+  train_service_provider: '5'
+  time_slot: '53820'
+  rolling_stock: '52'
+  origin_destination_tuples:
+  - origin: Madrid
+    destination: Zaragoza
+    seats:
+    - seat: '1'
+      price: '11.79'
+    - seat: '2'
+      price: '14.15'
+    - seat: '3'
+      price: '18.86'
+  - origin: Madrid
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '14.68'
+    - seat: '2'
+      price: '17.61'
+    - seat: '3'
+      price: '23.48'
+  - origin: Madrid
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '17.55'
+    - seat: '2'
+      price: '21.06'
+    - seat: '3'
+      price: '28.07'
+  - origin: Zaragoza
+    destination: Lleida
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  - origin: Zaragoza
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '11.4'
+    - seat: '2'
+      price: '13.68'
+    - seat: '3'
+      price: '18.24'
+  - origin: Lleida
+    destination: Barcelona
+    seats:
+    - seat: '1'
+      price: '8.21'
+    - seat: '2'
+      price: '9.85'
+    - seat: '3'
+      price: '13.14'
+  capacity_constraints: null
