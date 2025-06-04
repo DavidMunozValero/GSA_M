@@ -4,9 +4,8 @@ from copy import deepcopy
 from functools import cache
 from math import e, exp, cos, log, pi
 from pathlib import Path
-from typing import Any, List, Mapping, Tuple, Union
+from typing import Any, List, Mapping, Set, Tuple, Union
 
-from robin.services_generator.utils import build_service
 from robin.supply.entities import TimeSlot, Line, Service, Supply
 
 from benchmarks.utils import get_stations_positions
@@ -340,9 +339,11 @@ class MPTT:
         Returns:
             Final schedule as a boolean numpy array.
         """
+        unfeasible_services = self._unfesible_services()
         default_planner = np.array([not cm.any() for cm in self.conflict_matrix], dtype=bool)
+        default_planner[list(unfeasible_services)] = False
         conflicts = {sch for sch in self.updated_schedule if not default_planner[self.indexer[sch]]}
-        conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts}
+        conflicts_revenue = {sc: self.get_service_revenue(sc) for sc in conflicts if self.indexer[sc] not in unfeasible_services}
         # Sort by revenue (lowest first)
         conflicts_revenue = dict(sorted(conflicts_revenue.items(), key=lambda item: item[1]))
 
@@ -845,35 +846,46 @@ class MPTT:
                 return False
         return True
 
-    def _update_dynamic_bounds(
-            self, j: int, ot_idx: int, proposed_times: List[float], updated_boundaries: List[Tuple[float, float]]
-    ) -> Tuple[int, List[Tuple[float, float]]]:
+    def _unfesible_services(
+            self,
+    ) -> Set[str]:
         """
         Update dynamic boundaries for departure times based on operational times.
-
-        Args:
-            j: Current index in the requested times.
-            ot_idx: Current index in the operational times.
-            proposed_times: Proposed departure times.
-            updated_boundaries: Current boundaries list.
 
         Returns:
             A tuple of updated ot_idx and boundaries.
         """
-        if j != len(self.requested_times) - 1 and self.dt_indexer[j + 1] == self.dt_indexer[j]:
-            travel_time = self.operational_times[self.dt_indexer[j]][ot_idx]
-            stop_time = self.operational_times[self.dt_indexer[j]][ot_idx + 1]
-            ot_idx += 2
-            lower_bound = proposed_times[j] + travel_time + stop_time
-            max_dt_original = self.requested_times[j + 1] + self.im_mod_margin
-            max_dt_updated = lower_bound + (self.max_stop_time - stop_time)
-            upper_bound = min(max_dt_original, max_dt_updated)
-            updated_boundaries[j + 1] = (lower_bound, upper_bound)
-        else:
-            ot_idx = 0
-        return ot_idx, updated_boundaries
+        unfeasible_services = set()
+        for i, (service, schedule) in enumerate(self.updated_schedule.items()):
+            service_stations = list(self.requested_schedule[service].keys())
+            unfeasible = False
+            for j, station in enumerate(schedule):
+                if j == 0 or j == len(service_stations) - 1:
+                    continue
+                updated_arrival, updated_departure = self.updated_schedule[service][station]
+                requested_arrival, requested_departure = self.requested_schedule[service][station]
 
-    # === Static and Cached Methods ===
+                prev_station = service_stations[j-1]
+                prev_updated_arrival, prev_updated_departure = self.updated_schedule[service][prev_station]
+                prev_requested_arrival, prev_requested_departure = self.requested_schedule[service][prev_station]
+                operational_travel_time = requested_arrival - prev_requested_departure
+                operational_dwell_time = requested_departure - requested_arrival
+
+                if updated_departure < prev_updated_departure + operational_travel_time + operational_dwell_time:
+                    unfeasible = True
+                    break
+
+                if not updated_departure <= min(
+                        requested_departure + self.max_stop_time,
+                        prev_updated_departure + operational_travel_time + self.max_stop_time
+                ):
+                    unfeasible = True
+                    break
+
+            if unfeasible:
+                unfeasible_services.add(i)
+
+        return unfeasible_services
 
     @staticmethod
     def penalty_function(x: float, k: int) -> float:
