@@ -92,11 +92,7 @@ corridor:
             - org: 'Tarragona'
               des:
               - org: 'Barcelona'
-                des:
-                - org: 'Girona'
-                  des:
-                  - org: 'Figueres'
-                    des: []
+                des: []
 rollingStock:
 - id: '11'
   name: 'RU1 RS1'

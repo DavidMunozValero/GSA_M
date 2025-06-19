@@ -48,20 +48,6 @@ stations:
   coordinates:
     latitude: 41.37922
     longitude: 2.140624
-- id: Girona
-  name: Girona
-  city: Girona
-  short_name: GIR
-  coordinates:
-    latitude: 41.979303
-    longitude: 2.817006
-- id: Figueres
-  name: Figueres Vilafant
-  city: Figueres
-  short_name: FIG
-  coordinates:
-    latitude: 42.264771
-    longitude: 2.943547
 timeSlot:
 - id: '63600'
   start: '17:40:00'
@@ -155,11 +141,7 @@ corridor:
             - org: Tarragona
               des:
               - org: Barcelona
-                des:
-                - org: Girona
-                  des:
-                  - org: Figueres
-                    des: []
+                des: []
 line:
 - id: Line_0
   name: ZAR - LLE - TAR - BAR

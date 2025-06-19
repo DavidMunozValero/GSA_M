@@ -7,7 +7,7 @@ stations:
     latitude: 40.6441032
     longitude: -3.1822298
 - id: Barcelona
-  name: Barcelona-Sants
+  name: Barcelona
   city: Barcelona
   short_name: BAR
   coordinates:
@@ -35,14 +35,14 @@ stations:
     latitude: 41.620696
     longitude: 0.632669
 - id: Zaragoza
-  name: Zaragoza-Delicias
+  name: Zaragoza
   city: Zaragoza
   short_name: ZAR
   coordinates:
     latitude: 41.658649
     longitude: -0.911615
 - id: Madrid
-  name: Madrid-Puerta de Atocha
+  name: Madrid
   city: Madrid
   short_name: MAD
   coordinates:
@@ -92,11 +92,7 @@ corridor:
             - org: Tarragona
               des:
               - org: Barcelona
-                des:
-                - org: Girona
-                  des:
-                  - org: Figueres
-                    des: []
+                des: []
 line:
 - id: Line_0
   name: MAD - LLE
