@@ -81,7 +81,7 @@ def sns_box_plot(df: pd.DataFrame,
                  ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold', fontsize=18)
+    #ax.set_title(title, fontweight='bold', fontsize=18)
 
     # Draw the boxplot and stripplot
     boxplot = sns.boxplot(data=df, x=x_data, y=y_data, hue=hue, dodge=True, zorder=1, boxprops=dict(alpha=.3), ax=ax)
@@ -92,12 +92,21 @@ def sns_box_plot(df: pd.DataFrame,
     new_handles = [handle for handle, label in zip(handles, labels) if 'line' not in str(type(handle))]
 
     if hue:
-        ax.legend(handles=new_handles, title=hue, fontsize=12, title_fontsize=14)
+        #ax.legend(handles=new_handles, title=hue, fontsize=20, title_fontsize=14)
+        ax.legend(
+            handles=new_handles,
+            loc='upper center',  # Base de la posición (arriba y centrada)
+            bbox_to_anchor=(0.5, -0.2),  # Desplazamiento debajo del área de la gráfica
+            ncol=2,  # Organiza la leyenda en dos columnas
+            frameon=True,  # Muestra el marco de la leyenda (opcional)
+            borderaxespad=0.0,
+            fontsize=13
+        )
 
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.set_xlabel(x_label, fontsize=16)
-    ax.set_ylabel(y_label, fontsize=16)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.set_xlabel(x_label, fontsize=22)
+    ax.set_ylabel(y_label, fontsize=22)
 
     for spn in ('top', 'right', 'bottom', 'left'):
         ax.spines[spn].set_visible(True)
@@ -124,7 +133,7 @@ def sns_line_plot(df: pd.DataFrame,
                   ) -> None:
     fig, ax = plt.subplots(figsize=fig_size)
 
-    ax.set_title(title, fontweight='bold', fontsize=18)
+    #ax.set_title(title, fontweight='bold', fontsize=18)
     ax.set_xlim(x_limit)
     ax.set_ylim(y_limit)
 
@@ -137,9 +146,9 @@ def sns_line_plot(df: pd.DataFrame,
 
     ax.grid(axis='y', color='#A9A9A9', alpha=0.3, zorder=1)
 
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.set_xlabel(x_label, fontsize=16)
-    ax.set_ylabel(y_label, fontsize=16)
+    ax.tick_params(axis='both', which='major', labelsize=18)
+    ax.set_xlabel(x_label, fontsize=20)
+    ax.set_ylabel(y_label, fontsize=20)
 
     for spn in ('top', 'right', 'bottom', 'left'):
         ax.spines[spn].set_visible(True)
@@ -152,10 +161,12 @@ def sns_line_plot(df: pd.DataFrame,
             bbox_to_anchor=(0.5, -0.2),  # Desplazamiento debajo del área de la gráfica
             ncol=2,  # Organiza la leyenda en dos columnas
             frameon=True,  # Muestra el marco de la leyenda (opcional)
+            borderaxespad=0.5,
+            fontsize=13
         )
     else:
         # Inside, bottom right
-        plt.legend(loc='lower right')
+        plt.legend(loc='lower right', fontsize=16)
 
     plt.tight_layout(rect=[0, 0.15, 1, 1])  # Ajusta los márgenes para incluir la leyenda debajo
 
@@ -631,24 +642,25 @@ def configure_marey_axes(
     ax.tick_params(axis='both', which='major', labelsize=16)
     y_positions = list(station_positions.values())
     ax.set_yticks(y_positions)
-    ax.set_yticklabels([station.name for station in station_positions.keys()], fontsize=16)
+    ax.set_yticklabels([station.id for station in station_positions.keys()], fontsize=28)
 
     # Grid
     ax.grid(True, color='#A9A9A9', alpha=0.3, linestyle='-', linewidth=1.0, zorder=1)
 
     # Axis limits
     x_range = max_x - min_x
-    ax.set_xlim(-(min_x + 0.03 * x_range), max_x + 0.03 * x_range)
+    ax.set_xlim(min_x - 0.03 * x_range, max_x + 0.03 * x_range)
 
     # Title and axis labels
-    ax.set_title(title, fontweight='bold', fontsize=24, pad=20)
-    ax.set_xlabel('Time (HH:MM)', fontsize=18)
-    ax.set_ylabel('Stations', fontsize=18)
+    #ax.set_title(title, fontweight='bold', fontsize=30, pad=20)
+    ax.set_xlabel('Time (HH:MM)', fontsize=36)
+    ax.set_ylabel('Stations', fontsize=36)
 
     # X-axis formatting
-    ax.xaxis.set_major_locator(MultipleLocator(60))
+    ax.xaxis.set_major_locator(MultipleLocator(120))
     ax.xaxis.set_major_formatter(FuncFormatter(get_time_label))
-    plt.setp(ax.get_xticklabels(), rotation=70, ha='right', fontsize=20)
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right', fontsize=28)
+    #plt.setp(ax.get_xticklabels(), ha='center', fontsize=34)
 
 def show_plot(fig: plt.Figure, save_path: str = None) -> None:
     """
@@ -721,8 +733,11 @@ def update_time_bounds(
     Returns:
         Tuple[int, int]: Updated (min_x, max_x) bounds.
     """
-    times = [t for times in schedule_times.values() for t in times]
-    return min(min_x, min(times)), max(max_x, max(times))
+    service_departure = list(schedule_times.values())[0][1]
+    service_arrival = list(schedule_times.values())[-1][0]
+    min_x = min(min_x, service_departure)
+    max_x = max(max_x, service_arrival)
+    return min_x, max_x
 
 def plot_service_markers(
     ax: plt.Axes,
@@ -885,12 +900,13 @@ def plot_path_marey(
     """
     service_colors = prepare_service_colors(services)
     fig, ax = plt.subplots(figsize=(20, 11))
-    min_x, max_x = 0, 24 * 60
+    min_x, max_x = np.inf, -np.inf
     schedule = build_service_schedule(services, station_positions)
     all_polygons: List[Polygon] = []
     for service in services:
         service_schedule = schedule[service.id]
         min_x, max_x = update_time_bounds(schedule_times=service_schedule, min_x=min_x, max_x=max_x)
+        """
         plot_service_markers(
             ax=ax,
             service=service,
@@ -899,6 +915,7 @@ def plot_path_marey(
             color=service_colors[service.id],
             markers=markers
         )
+        """
         plot_service_line(
             ax=ax,
             service=service,
@@ -914,12 +931,13 @@ def plot_path_marey(
         )
         all_polygons.extend(polygons)
     highlight_intersections(all_polygons, ax)
-    add_markers_to_legend(markers, ax)
+    #add_markers_to_legend(markers, ax)
     start_station = next(iter(station_positions.keys()))
     end_station = list(station_positions.keys())[-1]
     title = f"{start_station.name} - {end_station.name}"
     configure_marey_axes(ax, station_positions, min_x, max_x, title)
-    ax.legend()
+    ax.legend(fontsize=28, loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=5, borderaxespad=2.2)
+    #ax.legend(fontsize=34, loc='upper left')
     plt.tight_layout()
     show_plot(fig, f'{save_path}{path_idx}.pdf')
 
